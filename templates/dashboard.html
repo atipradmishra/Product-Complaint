@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% block title %}HTO Complaint Report{% endblock %}
+{% block content %}
+<div class="ml-64 p-6">
+  <!-- Header and Summary -->
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold">HTO Complaint Analysis – Q2 & Q1 2022</h1>
+    <div class="text-sm text-gray-500">April 8, 2025 | Alex Morgan</div>
+  </div>
+
+  <div class="bg-white p-4 rounded-lg shadow mb-6">
+    <p><strong>AI Summary:</strong> Monthly complaint report across sites. Key product families with high complaint volumes: ACTEMRA, VABYSMO, and PHSESGO. Complaints tracked by site and product family for Q1 2025.</p>
+  </div>
+
+  <!-- Chart 1 -->
+  <div class="bg-white p-4 rounded-lg shadow mb-6 h-72">
+    <h2 class="font-bold text-sm mb-2">Number of HTO complaints received by product – Q2 2022</h2>
+    {{ graph_html | safe }}
+  </div>
+
+  <!-- Chart 2 -->
+  <div class="bg-white p-4 rounded-lg shadow mb-6 h-96">
+    <h2 class="font-bold text-sm mb-2">Number of HTO complaints received by defect subcategory – Q2 2022</h2>
+    <canvas id="defectSubcategoryChart" class="w-full h-full"></canvas>
+  </div>
+
+  <!-- Table Q2 -->
+  <div class="bg-white p-4 rounded-lg shadow mb-6">
+    <h2 class="font-bold text-sm mb-2">Q2 2022 Complaints – Criticality and Evaluation</h2>
+    <p class="text-sm mb-2">Of the 14 HTO complaints received in Q2 2022, 12 were non-critical (11 unconfirmed, 1 in progress) and 2 were critical (both unconfirmed).</p>
+    <table class="w-full text-sm text-left text-gray-700 border border-gray-200">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="border px-2 py-1"> </th>
+          <th class="border px-2 py-1">Confirmed</th>
+          <th class="border px-2 py-1">Unconfirmed</th>
+          <th class="border px-2 py-1">Investigation In Progress</th>
+          <th class="border px-2 py-1">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="border px-2 py-1">Non-critical</td>
+          <td class="border px-2 py-1">0</td>
+          <td class="border px-2 py-1">11</td>
+          <td class="border px-2 py-1">1</td>
+          <td class="border px-2 py-1">12</td>
+        </tr>
+        <tr>
+          <td class="border px-2 py-1">Critical</td>
+          <td class="border px-2 py-1">0</td>
+          <td class="border px-2 py-1">2</td>
+          <td class="border px-2 py-1">0</td>
+          <td class="border px-2 py-1">2</td>
+        </tr>
+        <tr class="font-semibold">
+          <td class="border px-2 py-1">Total</td>
+          <td class="border px-2 py-1">0</td>
+          <td class="border px-2 py-1">13</td>
+          <td class="border px-2 py-1">1</td>
+          <td class="border px-2 py-1">14</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="text-xs text-gray-500 mt-2">*As of report compilation, 1 complaint is in progress (QE-025968) and will be included in the next quarterly report.</p>
+  </div>
+
+  <!-- Table Q1 -->
+  <div class="bg-white p-4 rounded-lg shadow mb-6">
+    <h2 class="font-bold text-sm mb-2">Q1 2022 Complaints - Criticality and Evaluation</h2>
+    <p class="text-sm mb-2">There were 4 in progress complaints reported in Q1 2022. All 4 are now closed (all unconfirmed).</p>
+    <table class="w-full text-sm text-left text-gray-700 border border-gray-200">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="border px-2 py-1"> </th>
+          <th class="border px-2 py-1">Confirmed</th>
+          <th class="border px-2 py-1">Unconfirmed</th>
+          <th class="border px-2 py-1">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="border px-2 py-1">Non-critical</td>
+          <td class="border px-2 py-1">0</td>
+          <td class="border px-2 py-1">3</td>
+          <td class="border px-2 py-1">3</td>
+        </tr>
+        <tr>
+          <td class="border px-2 py-1">Critical</td>
+          <td class="border px-2 py-1">0</td>
+          <td class="border px-2 py-1">1</td>
+          <td class="border px-2 py-1">1</td>
+        </tr>
+        <tr class="font-semibold">
+          <td class="border px-2 py-1">Total</td>
+          <td class="border px-2 py-1">0</td>
+          <td class="border px-2 py-1">4</td>
+          <td class="border px-2 py-1">4</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="text-xs text-gray-500 mt-2">**QE-011097, QE-015744, QE-015997, QE-016978</p>
+  </div>
+
+  <!-- Analyst Copilot Section -->
+  <div class="bg-white p-4 rounded-lg shadow mb-6">
+    <h2 class="font-bold text-sm mb-4">Analyst Copilot</h2>
+
+    <form action="/copilot-query" method="POST" class="flex items-start justify-center gap-2 mb-4">
+      <textarea 
+        name="copilot_query" 
+        rows="1" 
+        class="w-3/4 border p-2 rounded text-sm resize-none" 
+        placeholder="Ask a question about complaint trends..."
+      ></textarea>
+      <button 
+        type="submit" 
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm whitespace-nowrap"
+      >
+        Send
+      </button>
+    </form>
+
+    <div class="flex gap-2 flex-wrap justify-center">
+      <button class="bg-gray-200 px-3 py-1 rounded text-sm">Compare sites</button>
+      <button class="bg-gray-200 px-3 py-1 rounded text-sm">Product family trend</button>
+      <button class="bg-gray-200 px-3 py-1 rounded text-sm">Monthly distribution</button>
+      <button class="bg-gray-200 px-3 py-1 rounded text-sm">Root cause analysis</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js Section -->
+<script>
+  // Chart 1 - Complaints by Product
+  new Chart(document.getElementById('complaintsByProductChart'), {
+    type: 'bar',
+    data: {
+      labels: ['ACTIVASE', 'MABTHERA', 'XOLAIR', 'PERJETA'],
+      datasets: [{
+        label: 'Number of Complaints',
+        data: [9, 3, 1, 1],
+        backgroundColor: 'rgba(54, 162, 235, 0.7)'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+
+  // Chart 2 - Complaints by Defect Subcategory
+  new Chart(document.getElementById('defectSubcategoryChart'), {
+    type: 'bar',
+    data: {
+      labels: [
+        'Transfer Device', 'Solvent Vial', 'Vial', 'Flip Off Cap', 'Broken Vial',
+        'Other Particulates', 'Infusion Bag', 'Detached Flip off Cap'
+      ],
+      datasets: [{
+        label: 'Defect Count',
+        data: [3, 2, 1, 1, 4, 1, 1, 1],
+        backgroundColor: 'rgba(255, 159, 64, 0.7)'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+</script>
+{% endblock %}

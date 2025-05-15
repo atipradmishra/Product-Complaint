@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Copilot Result{% endblock %}
+{% block content %}
+<div class="ml-64 p-6">
+  <h1 class="text-2xl font-bold mb-4">Copilot Query Result</h1>
+  <p class="mb-2"><strong>User Query:</strong> {{ query }}</p>
+  <p class="mb-2"><strong>Generated SQL:</strong></p>
+  <pre class="bg-gray-100 p-2 rounded">{{ sql }}</pre>
+
+  {% if result.error %}
+    <p class="text-red-600 font-semibold mt-4">Error: {{ result.error }}</p>
+  {% else %}
+    <table class="w-full text-sm border mt-4">
+      <thead class="bg-gray-100">
+        <tr>
+          {% for col in result.columns %}
+          <th class="px-2 py-1 border">{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in result.rows %}
+        <tr>
+          {% for cell in row %}
+          <td class="px-2 py-1 border">{{ cell }}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+{% endblock %}

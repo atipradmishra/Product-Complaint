@@ -1,0 +1,65 @@
+{
+  "date": "April 8, 2025",
+  "user": "Alex Morgan",
+  "summary": "Monthly complaint report across Roche sites. Key product families with high complaint volumes: ACTEMRA, VABYSMO, and PHSESGO. Complaints tracked by site and product family for Q1 2025.",
+  "total_complaints": 124,
+  "sites": [
+    {
+      "name": "Basel",
+      "complaints_by_month": {
+        "2025-01": 12,
+        "2025-02": 15,
+        "2025-03": 17
+      },
+      "product_family_complaints": {
+        "ACTEMRA": 9,
+        "VABYSMO": 7,
+        "PHSESGO": 6
+      }
+    },
+    {
+      "name": "San Francisco",
+      "complaints_by_month": {
+        "2025-01": 10,
+        "2025-02": 14,
+        "2025-03": 12
+      },
+      "product_family_complaints": {
+        "PEGASYS": 8,
+        "POLIVY": 6,
+        "ACTEMRA": 4
+      }
+    },
+    {
+      "name": "Singapore",
+      "complaints_by_month": {
+        "2025-01": 9,
+        "2025-02": 11,
+        "2025-03": 12
+      },
+      "product_family_complaints": {
+        "PHSESGO": 5,
+        "ACTEMRA": 6,
+        "VABYSMO": 3
+      }
+    }
+  ],
+  "top_product_families": [
+    {"name": "ACTEMRA", "total_complaints": 19},
+    {"name": "VABYSMO", "total_complaints": 10},
+    {"name": "PHSESGO", "total_complaints": 11},
+    {"name": "PEGASYS", "total_complaints": 8},
+    {"name": "POLIVY", "total_complaints": 6}
+  ],
+  "notifications": [
+    "ACTEMRA complaints rising in Basel site",
+    "Increased VABYSMO issues in March",
+    "PEGASYS stability concerns flagged in San Francisco"
+  ],
+  "recent_queries": [
+    "Show complaints by product family for Q1 2025",
+    "Compare Basel vs Singapore complaint trends",
+    "Which site had the highest complaints for ACTEMRA?",
+    "Monthly trend of PHSESGO complaints"
+  ]
+}

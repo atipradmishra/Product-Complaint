@@ -1,0 +1,342 @@
+column_name,data_type,description
+id,string,Unique identifier for the record
+global_id,string,Unique identifier for the global record
+name,string,Name field
+lifecycle_state,string,Lifecycle state of the record
+quality_event_type,string,Type of quality event
+title__english_,string,English title
+title,string,Title field
+description,string,Description text
+date_detected,date,Date when the event was detected
+origin_site_name,string,Name of originating site
+investigating_site_name,string,Name of investigating site
+immediate_actions_taken,string,Actions taken immediately
+comments,string,Additional comments
+oos_ooe_limit_excursion_,boolean,Out of specification/out of expectation limit excursion flag
+potential_third_party_impact_,boolean,Potential third party impact flag
+roche_3rd_party_investigation_required_,boolean,Roche third party investigation requirement flag
+is_there_impact_on_product_patient_,boolean,Flag indicating product/patient impact
+is_there_mitigation_detection_in_place_,boolean,Mitigation detection flag
+is_there_deviation_from_license__etc_,boolean,LICENSE deviation flag
+is_there_impact_on_validated_state_,boolean,Validated state impact flag
+is_scope_and_impact_known_,boolean,Known scope and impact flag
+investigation_decision_rationale,string,Rationale for investigation decision
+investigation_required_,boolean,Investigation requirement flag
+pli_performed_by_name,string,PLI performer name
+pli_date,date,PLI date
+correct_test_procedure_work_instruction_,string,Correct test procedure/work instruction
+correct_test_procedure_work_instruction__str,string,Correct test procedure/work instruction string
+standards__samples__and_reagents_used_ok,boolean,Standards/samples/reagents OK flag
+standards__samples__and_reagents_used_ok_str,string,Standards/samples/reagents OK string
+devices_and_equipment_used_for_test_ok,boolean,Devices/equipment OK flag
+devices_and_equipment_used_for_test_ok_str,string,Devices/equipment OK string
+analyst_performed_test_correctly,boolean,Analyst performance flag
+analyst_performed_test_correctly_str,string,Analyst performance string
+raw_data_and_recordings_correct,boolean,Raw data correctness flag
+raw_data_and_recordings_correct_str,string,Raw data correctness string
+calculations_carried_out_correctly,boolean,Calculations correctness flag
+calculations_carried_out_correctly_str,string,Calculations correctness string
+laboratory_conditions_were_ok,boolean,Laboratory conditions OK flag
+laboratory_conditions_were_ok_str,string,Laboratory conditions OK string
+method_specific_abnormalities_observed,boolean,Method abnormalities observed flag
+method_specific_abnormalities_observed_str,string,Method abnormalities observed string
+pli_outcome_description,string,PLI outcome description
+further_investigation_required_,boolean,Further investigation requirement flag
+lims_test_number,string,LIMS test number
+investigated_event_,string,Investigated event
+date_received,date,Date received
+source,string,Source
+source_str,string,Source string
+site_no_,string,Site number
+subject_id,string,Subject ID
+protocol_no_,string,Protocol number
+potential_pmsr_eu_mdr_event,boolean,Potential PMSR EU MDR event flag
+potential_ae_ss_product_safety_report,boolean,Potential AE SS product safety report flag
+date_reported_to_drug_safety,date,Date reported to drug safety
+other_associated_records,string,Other associated records
+type,string,Type
+type_str,string,Type string
+date_counterfeit_detected,date,Date counterfeit detected
+initial_criticality_classification,string,Initial criticality classification
+initial_criticality_classification_str,string,Initial criticality classification string
+lead_investigator_office,string,Lead investigator office
+lead_investigator_office_str,string,Lead investigator office string
+sample_photo_s__available,boolean,Sample photo available flag
+sample_photo_s__requested,boolean,Sample photo requested flag
+sample_photo_s__requested_date,date,Sample photo requested date
+physical_sample_received_date,date,Physical sample received date
+sample_photo_s__description,string,Sample photo description
+assigned_site_name,string,Assigned site name
+event_escalation_y_n_,boolean,Event escalation flag
+summary__english_only_,string,English summary
+impact_summary,string,Impact summary
+causal_analysis,string,Causal analysis
+trend_conclusion,string,Trend conclusion
+trend_conclusion_str,string,Trend conclusion string
+remediation_summary,string,Remediation summary
+cpp_in_scope_,boolean,CPP in scope flag
+process_validation_in_scope_,boolean,Process validation in scope flag
+ha_assessment_required_,boolean,HA assessment required flag
+data_integrity_impact_,boolean,Data integrity impact flag
+data_integrity_impact__str,string,Data integrity impact string
+systemic_issue_,boolean,Systemic issue flag
+critical_device_malfunction,boolean,Critical device malfunction flag
+criticality_conclusion,string,Criticality conclusion
+criticality_conclusion_str,string,Criticality conclusion string
+date_criticality_determined,date,Date criticality determined
+criticality_justification,string,Criticality justification
+investigation_outcome,string,Investigation outcome
+investigation_outcome_str,string,Investigation outcome string
+stock_out_level,string,Stock out level
+stock_out_level_str,string,Stock out level string
+recall_class,string,Recall class
+recall_class_str,string,Recall class string
+recall_level,string,Recall level
+recall_level_str,string,Recall level string
+roche_related,boolean,Roche related flag
+roche_related_str,string,Roche related string
+date_of_awareness,date,Date of awareness
+ha_notification,boolean,HA notification flag
+ha_notification_str,string,HA notification string
+state_before_planned_event__english_,string,State before planned event (English)
+state_before_planned_event__language_,string,State before planned event (Language)
+state_after_planned_event__english_,string,State after planned event (English)
+state_after_planned_event__language_,string,State after planned event (Language)
+justification__english_,string,Justification (English)
+justification__language_,string,Justification (Language)
+trigger_,string,Trigger
+trigger__str,string,Trigger string
+trigger_record_reference_name,string,Trigger record reference name
+potential_multisite_impact_,boolean,Potential multisite impact flag
+planned_event_type,string,Planned event type
+planned_event_type_str,string,Planned event type string
+temporary_planned_event,boolean,Temporary planned event flag
+display_language_fields,string,Display language fields
+distribution_list,string,Distribution list
+distribution_list_str,string,Distribution list string
+emergency_change_,boolean,Emergency change flag
+assessment_impact_outcomes__english_,string,Assessment impact outcomes (English)
+assessment_impact_outcomes__language_,string,Assessment impact outcomes (Language)
+potential_product_quality_impact_,boolean,Potential product quality impact flag
+potential_product_quality_impact__str,string,Potential product quality impact string
+regulatory_relevance_,boolean,Regulatory relevance flag
+regulatory_relevance___rationale,string,Regulatory relevance rationale
+impact_to_validation___qualification,blob,Impact to validation/qualification
+impact_to_val_qual___rationale,string,Impact to validation/qualification rationale
+lot_restriction_necessary_,boolean,Lot restriction necessary flag
+lot_restriction_necessary___rationale,string,Lot restriction necessary rationale
+require_additional_quality_oversight_,boolean,Additional quality oversight required flag
+require_additional_oversight___rationale,string,Additional oversight rationale
+classification,string,Classification
+quality_assessment,string,Quality assessment
+implementation_result,string,Implementation result
+implementation_result_str,string,Implementation result string
+target_implementation_date,date,Target implementation date
+implementation_date,date,Implementation date
+status,string,Status
+status_str,string,Status string
+date_in_planning_and_assessment,date,Date in planning and assessment
+date_in_investigation,date,Date in investigation
+date_in_final_approval,date,Date in final approval
+date_in_assign_owner,date,Date assign owner
+date_in_approval,date,Date in approval
+date_in_amend,date,Date in amend
+date_in_action_implementation,date,Date in action implementation
+nr_of_amendments,integer,Number of amendments
+nr_days_planning_and_assessment,integer,Days in planning and assessment
+nr_days_in_investigation,integer,Days in investigation
+nr_days_in_ammend_rft,integer,Days in amendment RFT
+nr_days_in_action_implementation,integer,Days in action implementation
+date_initiated,date,Date initiated
+amendment_date,date,Amendment date
+date_closed,date,Date closed
+_final_audit_report_distributed_,boolean,Audit report distribution flag
+actual_evidence_submission_date,date,Evidence submission date
+additional_guidance,string,Additional guidance
+approval_of_completed_actions_required_,boolean,Actions approval requirement flag
+audit_inspection,boolean,Audit inspection flag
+audit_inspection_focus,string,Audit inspection focus
+audit_inspection_focus_str,string,Audit inspection focus string
+audit_object_type__lookup_,string,Audit object type lookup
+audit_type,string,Audit type
+audit_type_str,string,Audit type string
+cancellation_justification,string,Cancellation justification
+containment_actions,string,Containment actions
+criticality,string,Criticality
+criticality_str,string,Criticality string
+date_finding_response_due,date,Date finding response due
+division,string,Division
+division_str,string,Division string
+event_origin,string,Event origin
+executing_party__lookup_,string,Executing party lookup
+executing_party__lookup__str,string,Executing party lookup string
+external_id,string,External ID
+external_response_owner__person_id,integer,External response owner person ID
+finding_category,string,Finding category
+finding_classification_risk_score,integer,Finding classification risk score
+finding_impact,string,Finding impact
+finding_impact_str,string,Finding impact string
+finding_note,string,Finding note
+finding_origin,string,Finding origin
+finding_origin_str,string,Finding origin string
+finding_risk_score_justification,string,Finding risk score justification
+finding_statement_1,string,Finding statement 1
+finding_statement_2,string,Finding statement 2
+finding_statement_3,string,Finding statement 3
+finding_sub_category__finding_subcategory_id,integer,Finding sub-category ID
+global_sop__work_instruction__policy,string,Global SOP/work instruction/policy
+global_sop__work_instruction__policy_str,string,Global SOP/work instruction/policy string
+gxp_classification,string,GXP classification
+gxp_classification_str,string,GXP classification string
+implementation_due_date,date,Implementation due date
+implementation_summary,string,Implementation summary
+in_execute_actions_,boolean,Execute actions flag
+probability,string,Probability
+probability_str,string,Probability string
+protected,boolean,Protected flag
+protected_str,string,Protected string
+qe_type,string,QE type
+qe_type_str,string,QE type string
+response_already_approved_,boolean,Response approved flag
+response_approach,string,Response approach
+response_assessment,string,Response assessment
+response_owner__external_only___person_id,integer,Response owner external ID
+response_received_date,date,Response received date
+response_required_,boolean,Response required flag
+response_strategy,string,Response strategy
+response_summary,string,Response summary
+revision_cancellation_reason,string,Revision cancellation reason
+sample_comment,string,Sample comment
+security,string,Security
+security_str,string,Security string
+sequence,integer,Sequence number
+severity,string,Severity
+severity_str,string,Severity string
+short_description,string,Short description
+sop__regulation__policy__other,string,SOP/regulation/policy/other
+source_of_action_s_,string,Source of actions
+source_of_action_s__str,string,Source of actions string
+statement_id_1,integer,Statement ID 1
+statement_id_2,integer,Statement ID 2
+statement_id_3,integer,Statement ID 3
+do_you_want_pli_,boolean,PLI wanted flag
+triage_participants,string,Triage participants
+assigned_areas__investigating_site___phoenix_organizations_departments_id,integer,Assigned areas investigating site ID
+department__investigating_site___area_department_id,integer,Department investigating site ID
+sub_department__investigating_site___sub_departments_id,integer,Sub-department investigating site ID
+deviation_type,string,Deviation type
+justification_for_late_documentation,string,Justification for late documentation
+date_last_re_opened,date,Date last reopened
+level_of_understanding_of_cause,string,Level of understanding of cause
+level_of_understanding_of_cause_str,string,Level of understanding of cause string
+response_rejected_counter,integer,Response rejected counter
+additional_guidance_1,string,Additional guidance 1
+rationale_why_eff__check_is_is_not_needed,string,Rationale for effectiveness check
+effectiveness_result,string,Effectiveness result
+effectiveness_result_str,string,Effectiveness result string
+impact_on_risk_assessment,blob,Impact on risk assessment
+data_integrity_aspect,string,Data integrity aspect
+alcoa__elements,string,ALCOA elements
+alcoa__elements_str,string,ALCOA elements string
+capa_type,string,CAPA type
+capa_type_str,string,CAPA type string
+capa_due_date,date,CAPA due date
+impacted_areas,string,Impacted areas
+impacted_areas_str,string,Impacted areas string
+material_s__in_scope_,boolean,Materials in scope flag
+material_s__in_scope__str,string,Materials in scope string
+process_validation_in_scope_,boolean,Process validation in scope flag
+ha_assessment_required_,boolean,HA assessment required flag
+data_integrity_impact_,boolean,Data integrity impact flag
+data_integrity_impact__str,string,Data integrity impact string
+systemic_issue_,boolean,Systemic issue flag
+critical_device_malfunction,boolean,Critical device malfunction flag
+criticality_technical_conclusion,string,Technical criticality conclusion
+criticality_technical_conclusion_str,string,Technical criticality conclusion string
+date_criticality_determined_technical,date,Date technical criticality determined
+criticality_technical_justification,string,Technical criticality justification
+safety_medical_impact_conclusion,string,Safety medical impact conclusion
+safety_medical_impact_conclusion_str,string,Safety medical impact conclusion string
+criticality_medical_conclusion,string,Medical criticality conclusion
+criticality_medical_conclusion_str,string,Medical criticality conclusion string
+date_criticality_determined_medical,date,Date medical criticality determined
+criticality_medical_justification,string,Medical criticality justification
+technical_investigation_outcome,string,Technical investigation outcome
+technical_investigation_outcome_str,string,Technical investigation outcome string
+medical_investigation_outcome,string,Medical investigation outcome
+medical_investigation_outcome_str,string,Medical investigation outcome string
+executive_summary,string,Executive summary
+background,string,Background
+description_of_defect__annex_a_,string,Description of defect (Annex A)
+affected_device_component__annex_g_,string,Affected device component (Annex G)
+summary_of_investigation_plan__annex_b_,string,Summary of investigation plan (Annex B)
+manufacturing_results,string,Manufacturing results
+analytical_test_result_review,string,Analytical test result review
+reference_retain_sample_evaluation,string,Reference retain sample evaluation
+medical_device_risk_assessment_review,string,Medical device risk assessment review
+other_data_applicable_data_sets,string,Other applicable data sets
+ha__fsca__assessment,blob,HA/FSCA assessment
+causal_analysis_field__annex_c_,string,Causal analysis field (Annex C)
+conclusion__annex_d_,string,Conclusion (Annex D)
+created_by,integer,Created by ID
+created_date,date,Created date
+last_modified_by,integer,Last modified by ID
+last_modified_date,date,Last modified date
+pli_performed_by__person_id,integer,PLI performed by ID
+investigating_site__organization_id,integer,Investigating site ID
+assigned_site__organization_id,integer,Assigned site ID
+origin_site__organization_id,integer,Origin site ID
+created_by__users_id,integer,Created by user ID
+last_modified_by__users_id,integer,Last modified by user ID
+audit_inspection__audit_inspections_id,integer,Audit inspection ID
+external_response_owner__person_id,integer,External response owner person ID
+finding_category__finding_category_id,integer,Finding category ID
+finding_statement_1__finding_statement_id,integer,Finding statement 1 ID
+finding_statement_2__finding_statement_id,integer,Finding statement 2 ID
+finding_statement_3__finding_statement_id,integer,Finding statement 3 ID
+finding_sub_category__finding_subcategory_id,integer,Finding sub-category ID
+response_owner__external_only___person_id,integer,Response owner external ID
+trigger_record_reference_name,string,Trigger record reference name
+potential_multisite_impact_,boolean,Potential multisite impact flag
+planned_event_type,string,Planned event type
+planned_event_type_str,string,Planned event type string
+temporary_planned_event,boolean,Temporary planned event flag
+display_language_fields,string,Display language fields
+distribution_list,string,Distribution list
+distribution_list_str,string,Distribution list string
+emergency_change_,boolean,Emergency change flag
+assessment_impact_outcomes__english_,string,Assessment impact outcomes (English)
+assessment_impact_outcomes__language_,string,Assessment impact outcomes (Language)
+potential_product_quality_impact_,boolean,Potential product quality impact flag
+potential_product_quality_impact__str,string,Potential product quality impact string
+regulatory_relevance_,boolean,Regulatory relevance flag
+regulatory_relevance___rationale,string,Regulatory relevance rationale
+impact_to_validation___qualification,blob,Impact to validation/qualification
+impact_to_val_qual___rationale,string,Impact to validation/qualification rationale
+lot_restriction_necessary_,boolean,Lot restriction necessary flag
+lot_restriction_necessary___rationale,string,Lot restriction necessary rationale
+require_additional_quality_oversight_,boolean,Additional quality oversight required flag
+require_additional_oversight___rationale,string,Additional oversight rationale
+classification,string,Classification
+quality_assessment,string,Quality assessment
+implementation_result,string,Implementation result
+implementation_result_str,string,Implementation result string
+target_implementation_date,date,Target implementation date
+implementation_date,date,Implementation date
+status,string,Status
+status_str,string,Status string
+date_in_planning_and_assessment,date,Date in planning and assessment
+date_in_investigation,date,Date in investigation
+date_in_final_approval,date,Date in final approval
+date_in_assign_owner,date,Date assign owner
+date_in_approval,date,Date in approval
+date_in_amend,date,Date in amend
+date_in_action_implementation,date,Date in action implementation
+nr_of_amendments,integer,Number of amendments
+nr_days_planning_and_assessment,integer,Days in planning and assessment
+nr_days_in_investigation,integer,Days in investigation
+nr_days_in_ammend_rft,integer,Days in amendment RFT
+nr_days_in_action_implementation,integer,Days in action implementation
+date_initiated,date,Date initiated
+amendment_date,date,Amendment date
+date_closed,date,Date closed

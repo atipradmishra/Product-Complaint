@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Data Management{% endblock %}
+{% block content %}
+  <div class="ml-64 p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Data Management</h1>
+      <button class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700"
+              onclick="document.getElementById('upload-modal').classList.remove('hidden')">
+        Upload New File
+      </button>
+    </div>
+
+    <div class="bg-white p-4 rounded-lg shadow">
+      <table class="min-w-full text-sm text-left text-gray-600">
+        <thead class="text-xs text-gray-500 uppercase bg-gray-100">
+          <tr>
+            <th scope="col" class="px-4 py-3">File Name</th>
+            <th scope="col" class="px-4 py-3">Size</th>
+            <th scope="col" class="px-4 py-3">Location</th>
+            <th scope="col" class="px-4 py-3">Date Uploaded</th>
+            <th scope="col" class="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for file in files %}
+          <tr class="border-b">
+            <td class="px-4 py-3">{{file.file_name}}</td>
+            <td class="px-4 py-3">2.0KB</td>
+            <td class="px-4 py-3">{{ file.file_path }}</td>
+            <td class="px-4 py-3 text-green-600 font-semibold">{{file.created_at}}</td>
+            <td class="px-4 py-3">
+              <button class="text-blue-600 hover:underline">Download</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Upload Modal -->
+  <div id="upload-modal"
+       class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-lg shadow-md w-full max-w-xl">
+      <h2 class="text-xl font-bold mb-4">Upload New File</h2>
+      <form action="/upload-validate-file" method="POST" enctype="multipart/form-data">
+
+        <label class="block mb-2 font-medium"> required class="w-full px-4 py-2 border rounded-lg">Select Bucket Name (S3)</label>
+          <select name="bucket" class="w-full px-4 py-2 border rounded-lg">
+            <option>product-complaint-mgnt</option>
+            <option>xx</option>
+          </select>
+      
+        <label class="block mb-2 font-medium">Folder in Bucket</label>
+        <select name="folder" required class="w-full mb-4 px-3 py-2 border rounded">
+          <option value="">-- Select Folder --</option>
+          <option value="ProductComplaint">data-file</option>
+          <option value="QualityReview">metadatdata-file</option>
+          
+        </select>
+
+        <label class="block mb-2 font-medium">Metadata File (CSV)</label>
+        <input type="file" name="metadata_file" accept=".csv" required
+               class="w-full mb-4 px-3 py-2 border rounded">
+
+        <label class="block mb-2 font-medium">Data File (XLSX, XLS)</label>
+        <input type="file" name="data_file" accept=".xlsx,.xls" required
+               class="w-full mb-4 px-3 py-2 border rounded">
+
+        <div class="flex justify-end space-x-4">
+          <button type="button"
+                  class="px-4 py-2 rounded border"
+                  onclick="document.getElementById('upload-modal').classList.add('hidden')">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Validate & Upload
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

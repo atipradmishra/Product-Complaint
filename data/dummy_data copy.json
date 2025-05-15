@@ -1,0 +1,27 @@
+{
+    "date": "April 8, 2025",
+    "user": "Alex Morgan",
+    "summary": "GTUO saw a €2M drop in Baseload market value and €2.1M in Peakload. linked to a 322 MWh volume decrease in Peakload. No alerts breached, but watch for sustained drop.",
+    "net_position": -4.2,
+    "market_value": -4.1,
+    "exposure": ["GTUO", "KLCH"],
+    "alerts": 0,
+    "books": [
+      {"name": "GTUO", "baseload": -2.0, "peakload": -2.1, "offpeak": 0.3},
+      {"name": "KLCH", "baseload": -0.7, "peakload": 0.0, "offpeak": 0.5},
+      {"name": "BTRS", "baseload": 0.2, "peakload": 0.3, "offpeak": 0.0},
+      {"name": "MRDO", "baseload": -0.1, "peakload": 0.1, "offpeak": 0.2}
+    ],
+    "notifications": [
+      "GTUO Peakload volume ↓ 322 MWh",
+      "Weather forecast changed for GER region",
+      "Check May delivery contracts"
+    ],
+    "recent_queries": [
+      "Why did the market value drop today?",
+      "Show GTUO performance for the last week",
+      "Compare current positions to last month",
+      "Forecast peakload prices for next week"
+    ]
+  }
+  
