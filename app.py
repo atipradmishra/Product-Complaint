@@ -9,8 +9,7 @@ from db_manager import create_users_table, register_user, authenticate_user
 from dataagent.s3_database_upload import upload_s3_database_update
 import json
 import os
-from config import DB_NAME,BUCKET_NAME, aws_access_key, aws_secret_key
-import pandas as pd
+from config import DB_NAME
 import boto3
 import os
 import uuid
