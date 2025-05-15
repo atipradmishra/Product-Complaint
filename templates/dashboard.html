@@ -15,7 +15,7 @@
   <!-- Chart 1 -->
   <div class="bg-white p-4 rounded-lg shadow mb-6 h-72">
     <h2 class="font-bold text-sm mb-2">Number of HTO complaints received by product – Q2 2022</h2>
-    {{ graph_html | safe }}
+    <canvas id="complaintsChart" width="600" height="400"></canvas>
   </div>
 
   <!-- Chart 2 -->
@@ -132,6 +132,38 @@
 
 <!-- Chart.js Section -->
 <script>
+  const ctx = document.getElementById('complaintsChart').getContext('2d');
+        const complaintsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ labels|tojson }},
+                datasets: [{
+                    label: 'No. of Complaints',
+                    data: {{ values|tojson }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Complaints'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Product'
+                        }
+                    }
+                }
+            }
+        });
   // Chart 1 - Complaints by Product
   new Chart(document.getElementById('complaintsByProductChart'), {
     type: 'bar',

@@ -4,7 +4,6 @@ from chatagent.chat_prompt import system_prompt, sql_kwargs
 from chatagent.sql_copilot import get_sql_from_question
 from sql_query_executor import run_sql
 import pandas as pd
-import matplotlib.pyplot as plt
 from sql_query_executor import run_sql
 from db_manager import create_users_table, register_user, authenticate_user
 from dataagent.s3_database_upload import upload_s3_database_update
@@ -44,10 +43,7 @@ def inject_now():
 def get_complaints_data():
     conn = sqlite3.connect(DB_NAME)
     query = '''
-        SELECT title as product_name, COUNT(*) as total_complaints
-        FROM raw_data
-        GROUP BY product_name
-        ORDER BY total_complaints DESC
+        SELECT title as product_name FROM raw_data
     '''
     df = pd.read_sql_query(query, conn)
     conn.close()
@@ -57,21 +53,11 @@ def get_complaints_data():
 def dashboard():
     df = get_complaints_data()
     complaint_counts = df['product_name'].value_counts()
-    plt.figure(figsize=(10, 6))
-    complaint_counts.plot(kind='bar', color='skyblue')
-    plt.title("Total Complaints by Product")
-    plt.xlabel("Product")
-    plt.ylabel("Number of Complaints")
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-
-    # Save plot
-    graph_path = os.path.join("static", "complaints_by_product.png")
-    plt.savefig(graph_path)
-    plt.close()
+    labels = complaint_counts.index.tolist()
+    values = complaint_counts.values.tolist()
     with open("data/dummy_data.json") as f:
         data = json.load(f)
-    return render_template("dashboard.html", data=data, graph_html=graph_path)
+    return render_template("dashboard.html", data=data, labels=labels, values=values)
 
 @app.route("/rag-configure")
 def rag_configure():
