@@ -4,7 +4,7 @@ from chatagent.chat_prompt import system_prompt, sql_kwargs
 from chatagent.sql_copilot import get_sql_from_question
 from sql_query_executor import run_sql
 import pandas as pd
-import plotly.express as px
+import matplotlib.pyplot as plt
 from sql_query_executor import run_sql
 from db_manager import create_users_table, register_user, authenticate_user
 from dataagent.s3_database_upload import upload_s3_database_update
@@ -56,7 +56,7 @@ def get_complaints_data():
 @app.route("/")
 def dashboard():
     df = get_complaints_data()
-    
+    complaint_counts = df['product_name'].value_counts()
     plt.figure(figsize=(10, 6))
     complaint_counts.plot(kind='bar', color='skyblue')
     plt.title("Total Complaints by Product")
