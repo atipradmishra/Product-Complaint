@@ -7,9 +7,33 @@
         <div class="bg-white shadow rounded-lg p-6 h-full flex flex-col">
             <h2 class="text-xl font-bold text-gray-800 mb-4">💬 Chat with RAG Agent</h2>
 
+            <!-- Agent Selector -->
+            <div class="mb-2">
+                <label for="agent-select" class="block mb-1 text-sm font-semibold text-gray-700">Select RAG Agent:</label>
+                <select id="agent-select" class="border rounded px-3 py-2 w-full">
+                    <option value="">-- Choose Agent --</option>
+                </select>
+            </div>
+
+            <!-- Connection Status -->
+            <div id="connection-status" class="mb-4 text-sm text-gray-600"></div>
+
             <!-- Chat Messages Window -->
             <div id="chat-box" class="flex-1 overflow-y-auto space-y-4 mb-4 border rounded-lg p-4 bg-gray-100">
-                <!-- Welcome message -->
+                {% for user_msg, bot_msg, timestamp in chat_history %}
+                <div class='flex items-start justify-end space-x-2'>
+                    <div class='bg-gray-200 text-gray-800 p-3 rounded-lg max-w-xl'>
+                        {{ user_msg }}
+                        <div class="text-xs text-gray-500 mt-1 text-right">{{ timestamp }}</div>
+                    </div>
+                </div>
+                <div class='flex items-start space-x-2'>
+                    <div class='bg-blue-100 text-blue-800 p-3 rounded-lg max-w-xl'>
+                        {{ bot_msg }}
+                        <div class="text-xs text-gray-500 mt-1">{{ timestamp }}</div>
+                    </div>
+                </div>
+                {% endfor %}
                 <div class="flex items-start space-x-2">
                     <div class="bg-blue-100 text-blue-800 p-3 rounded-lg max-w-xl">
                         Hi there! Ask me anything about your complaint data.
@@ -21,96 +45,153 @@
             <!-- Input Form -->
             <form id="chat-form" class="mt-4 flex items-center space-x-2">
                 <input type="text" id="user-input" name="message" placeholder="Type your question..." required
-                    class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Send</button>
+                    class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400" disabled>
+                <button type="submit" id="send-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700" disabled>Send</button>
             </form>
         </div>
     </div>
+</div>
 
-    <script>
-        // Escape HTML to prevent XSS
-        function escapeHtml(text) {
-            const div = document.createElement("div");
-            div.innerText = text;
-            return div.innerHTML;
+<script>
+    function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.innerText = text;
+        return div.innerHTML;
+    }
+
+    function getTimestamp() {
+        const now = new Date();
+        return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatBox = document.getElementById('chat-box');
+    const agentSelect = document.getElementById('agent-select');
+    const connectionStatus = document.getElementById('connection-status');
+
+    window.onload = async () => {
+        input.disabled = true;
+        sendBtn.disabled = true;
+
+        // Pre-fill question if provided
+        const prefillValue = "{{ prefill | safe }}";
+        if (prefillValue) {
+            input.value = prefillValue;
+            form.dispatchEvent(new Event("submit"));
         }
 
-        // Add timestamp (optional)
-        function getTimestamp() {
-            const now = new Date();
-            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-
-        const form = document.getElementById('chat-form');
-        const input = document.getElementById('user-input');
-        const chatBox = document.getElementById('chat-box');
-
-        // Autofocus input on page load
-        window.onload = () => input.focus();
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const userMessage = input.value.trim();
-            if (!userMessage) return;
-
-            // Show user message
-            chatBox.innerHTML += `<div class='flex items-start justify-end space-x-2'>
-                <div class='bg-gray-200 text-gray-800 p-3 rounded-lg max-w-xl'>
-                    ${escapeHtml(userMessage)}
-                    <div class="text-xs text-gray-500 mt-1 text-right">${getTimestamp()}</div>
-                </div>
-            </div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-            input.value = "";
-
-            // Show loading placeholder
-            const loadingId = "loading-msg-" + Date.now();
-            chatBox.innerHTML += `<div id="${loadingId}" class='flex items-start space-x-2'>
-                <div class='bg-yellow-100 text-yellow-800 p-3 rounded-lg max-w-xl animate-pulse'>
-                    Thinking...
-                </div>
-            </div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-
-            try {
-                const res = await fetch("/copilot-query", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ message: userMessage })
-                });
-                const data = await res.json();
-                const ragResponse = data.response;
-
-                document.getElementById(loadingId)?.remove();
-
-                chatBox.innerHTML += `<div class='flex items-start space-x-2'>
-                    <div class='bg-blue-100 text-blue-800 p-3 rounded-lg max-w-xl relative'>
-                        ${escapeHtml(ragResponse)}
-                        <div class="text-xs text-gray-500 mt-1">${getTimestamp()}</div>
-                        <div class="flex items-center mt-2 space-x-2 feedback-buttons">
-                            <button onclick="submitFeedback(this, 'up')" class="text-green-600 hover:text-green-800">👍</button>
-                            <button onclick="submitFeedback(this, 'down')" class="text-red-600 hover:text-red-800">👎</button>
-                        </div>
-                    </div>
-                </div>`;
-
-                chatBox.scrollTop = chatBox.scrollHeight;
-            } catch (error) {
-                document.getElementById(loadingId)?.remove();
-                chatBox.innerHTML += `<div class='flex items-start space-x-2'>
-                    <div class='bg-red-100 text-red-800 p-3 rounded-lg max-w-xl'>
-                        ⚠️ Error getting response.
-                        <div class="text-xs text-gray-500 mt-1">${getTimestamp()}</div>
-                    </div>
-                </div>`;
-            }
+        // Load agents into dropdown
+        const res = await fetch("/get-connections");
+        const agents = await res.json();
+        agents.forEach(agent => {
+            const option = document.createElement("option");
+            option.value = agent.id;
+            option.textContent = agent.name;
+            agentSelect.appendChild(option);
         });
+    };
 
-        async function submitFeedback(button, type) {
+    // Handle agent change
+    agentSelect.addEventListener("change", async () => {
+        const agentId = agentSelect.value;
+        input.disabled = true;
+        sendBtn.disabled = true;
+        connectionStatus.textContent = "🔌 Connecting to selected agent...";
+
+        if (!agentId) {
+            connectionStatus.textContent = "⚠️ Please select a valid RAG agent.";
+            return;
+        }
+
+        try {
+            const res = await fetch("/connect-agent", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ agent_id: agentId })
+            });
+            const result = await res.json();
+
+            if (result.status === "success") {
+                connectionStatus.textContent = `✅ ${result.message}`;
+                input.disabled = false;
+                sendBtn.disabled = false;
+            } else {
+                connectionStatus.textContent = `❌ ${result.message}`;
+            }
+        } catch (err) {
+            connectionStatus.textContent = "❌ Failed to connect.";
+            console.error(err);
+        }
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userMessage = input.value.trim();
+        const agentId = agentSelect.value;
+
+        if (!userMessage) return;
+        if (!agentId) {
+            alert("Please select a RAG Agent before submitting.");
+            return;
+        }
+
+        chatBox.innerHTML += `<div class='flex items-start justify-end space-x-2'>
+            <div class='bg-gray-200 text-gray-800 p-3 rounded-lg max-w-xl'>
+                ${escapeHtml(userMessage)}
+                <div class="text-xs text-gray-500 mt-1 text-right">${getTimestamp()}</div>
+            </div>
+        </div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+        input.value = "";
+
+        const loadingId = "loading-msg-" + Date.now();
+        chatBox.innerHTML += `<div id="${loadingId}" class='flex items-start space-x-2'>
+            <div class='bg-yellow-100 text-yellow-800 p-3 rounded-lg max-w-xl animate-pulse'>
+                Thinking...
+            </div>
+        </div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            const res = await fetch("/copilot-query", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userMessage, agent_id: agentId })
+            });
+            const data = await res.json();
+            const ragResponse = data.response;
+
+            document.getElementById(loadingId)?.remove();
+
+            chatBox.innerHTML += `<div class='flex items-start space-x-2'>
+                <div class='bg-blue-100 text-blue-800 p-3 rounded-lg max-w-xl relative'>
+                    ${escapeHtml(ragResponse)}
+                    <div class="text-xs text-gray-500 mt-1">${getTimestamp()}</div>
+                    <div class="flex items-center mt-2 space-x-2 feedback-buttons">
+                        <button onclick="submitFeedback(this, 'up')" class="text-green-600 hover:text-green-800">👍</button>
+                        <button onclick="submitFeedback(this, 'down')" class="text-red-600 hover:text-red-800">👎</button>
+                    </div>
+                </div>
+            </div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        } catch (error) {
+            document.getElementById(loadingId)?.remove();
+            chatBox.innerHTML += `<div class='flex items-start space-x-2'>
+                <div class='bg-red-100 text-red-800 p-3 rounded-lg max-w-xl'>
+                    ⚠️ Error getting response.
+                    <div class="text-xs text-gray-500 mt-1">${getTimestamp()}</div>
+                </div>
+            </div>`;
+        }
+    });
+
+    async function submitFeedback(button, type) {
         const buttons = button.parentElement.querySelectorAll('button');
-        buttons.forEach(btn => btn.disabled = true);  // Disable both buttons after selection
+        buttons.forEach(btn => btn.disabled = true);
 
-        const message = button.closest('div').innerText.split('\n')[0]; // get response text
+        const message = button.closest('div').innerText.split('\n')[0];
         try {
             await fetch("/copilot-feedback", {
                 method: "POST",
@@ -124,6 +205,5 @@
             console.error("Feedback failed", err);
         }
     }
-    </script>
-</div>
+</script>
 {% endblock %}

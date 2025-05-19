@@ -1,44 +1,162 @@
+<!-- Tailwind CDN for demo (Remove if already imported in your project) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
 <style>
-    #powered-by {
-      text-align: center;
-      font-size: 12px;
-      color: #888;
-      padding: 10px;
-      position: absolute;
-      bottom: 10px;
-      left:10px;
-    }
-    img{
-      margin-top: 20px;
-      height: 10%;
-      margin-right:auto;
-      margin-left:auto;
-    }
+  #powered-by {
+    text-align: center;
+    font-size: 12px;
+    color: #888;
+    padding: 12px 0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+  }
+
+  .logo {
+    margin: 10px auto;
+    display: block;
+    height: 100px;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background 0.2s ease;
+    color: #333;
+    text-decoration: none;
+  }
+
+  .menu-item:hover {
+    background-color: #f3f4f6;
+  }
+
+  .menu-item.active {
+    background-color: #2563eb;
+    color: white;
+  }
+
+  .radio-hidden {
+    display: none;
+  }
 </style>
-<div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white shadow-md border-r z-40 -translate-x-full lg:translate-x-0">
-  <img src="/static/logo.png" alt="logo">
-    <ul class="mt-4 space-y-2 px-4 text-gray-700">
-      <li>
-        <a href="/" class="block px-2 py-2 rounded hover:bg-blue-100 {{ 'bg-blue-100' if request.path == '/' else '' }}">Dashboard</a>
-      </li>
-      <li>
-        <a href="/rag-configure" class="block px-2 py-2 rounded hover:bg-blue-100 {{ 'bg-blue-100' if request.path == '/rag-configure' else '' }}">Configure/Manage RAG Agents</a>
-      </li>
-      <li>
-        <a href="/data-management" class="block px-2 py-2 rounded hover:bg-blue-100 {{ 'bg-blue-100' if request.path == '/data-management' else '' }}">Data Mangement</a>
-      </li>
-      <li>
-        <a href="/chat-with-rag" class="block px-2 py-2 rounded hover:bg-blue-100 {{ 'bg-blue-100' if request.path == '/chat-with-rag' else '' }}">Complaint Analysis</a>
-      </li>
-      <li>
-        <a href="#" class="block px-2 py-2 rounded hover:bg-blue-100">Graph Query</a>
-      </li>
-      <li>
-        <a href="#" class="block px-2 py-2 rounded hover:bg-blue-100">User Feedback</a>
-      </li>
-      <li>
-        <a href="#" class="block px-2 py-2 rounded hover:bg-blue-100">Settings</a>
-      </li>
-    </ul>
-    <div id="powered-by">Powered by Cloudhub</div>
+
+<div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white shadow-md border-r z-40 -translate-x-full lg:translate-x-0 flex flex-col">
+
+  <!-- Logo -->
+  <img src="/static/logo.png" alt="logo" class="logo" />
+
+  <!-- Sidebar Content -->
+  <div class="flex-1 px-4 pt-2 text-sm text-gray-900 overflow-y-auto">
+    <form method="POST" action="/select-agent">
+      
+      <!-- AI Agent Selector -->
+      <div class="mb-6">
+        <label class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Select AI Agent</label>
+        <div class="space-y-2 text-gray-800">
+          <label class="flex items-center space-x-2">
+            <input type="radio" name="ai_agent" value="app" class="accent-blue-600" />
+            <span>Application AI Agent</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input type="radio" name="ai_agent" value="rag" class="accent-blue-600" />
+            <span>RAG AI Agent</span>
+          </label>
+          <label class="flex items-center space-x-2">
+            <input type="radio" name="ai_agent" value="data_mgmt" checked class="accent-blue-600" />
+            <span>Data Management AI Agent</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Section Menu Buttons -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Menu</label>
+        <div id="section-options" class="space-y-1">
+          <!-- JS fills here -->
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <div id="powered-by">Powered by CloudHub</div>
 </div>
+
+<script>
+  const sections = {
+    app: [
+      { name: "Dashboard", path: "/" },
+      { name: "Co-Pilot Query", path: "/chat-with-rag" },
+      { name: "Graph Query", path: "/graph-query" },
+      { name: "Deviation Analysis", path: "/deviation-analysis" },
+      { name: "Agentic AI Logs", path: "/query-log-analyzer" },
+      { name: "Root Cause Analysis", path: "/root-cause" },
+      { name: "Analysis History", path: "/analysis-history" },
+      { name: "User Feedback", path: "/user-feedback" }
+    ],
+    data_mgmt: [
+      { name: "Data Dashboard", path: "/data-dashboard" },
+      { name: "Data Pipeline", path: "/data-management" },
+      { name: "Processed Data", path: "/processed-data" }
+    ],
+    rag: [
+      { name: "RAG Dashboard", path: "/rag-dashboard" },
+      { name: "Manage RAG Agents", path: "/rag-configure" },
+      { name: "System Prompt Setup", path: "/query-analyzer" },
+      { name: "Fine Tuning", path: "/fine-tuning" },
+      { name: "Settings", path: "/settings" }
+    ]
+  };
+
+  const radioButtons = document.querySelectorAll('input[name="ai_agent"]');
+  const sectionOptionsDiv = document.getElementById("section-options");
+
+  function getCurrentAgentKey() {
+    const path = window.location.pathname;
+    for (const [key, entries] of Object.entries(sections)) {
+      if (entries.some(s => s.path === path)) {
+        return key;
+      }
+    }
+    return "data_mgmt";
+  }
+
+  function renderSections(agentKey) {
+    sectionOptionsDiv.innerHTML = "";
+    const currentPath = window.location.pathname;
+
+    sections[agentKey].forEach((section, index) => {
+      const isActive = currentPath === section.path;
+      const wrapper = document.createElement("div");
+
+      wrapper.innerHTML = `
+        <a href="${section.path}" class="menu-item ${isActive ? "active" : ""}">
+          ${section.name}
+        </a>
+        <input type="radio" name="section" value="${section.name}" ${isActive ? "checked" : ""} class="radio-hidden" />
+      `;
+
+      sectionOptionsDiv.appendChild(wrapper);
+    });
+
+    // Sync AI agent selection
+    document.querySelectorAll('input[name="ai_agent"]').forEach(radio => {
+      radio.checked = radio.value === agentKey;
+    });
+  }
+
+  // Initial render
+  const currentAgent = getCurrentAgentKey();
+  renderSections(currentAgent);
+
+  // Update on AI Agent change
+  radioButtons.forEach(btn => {
+    btn.addEventListener("change", () => {
+      renderSections(btn.value);
+    });
+  });
+</script>

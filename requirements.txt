@@ -5,6 +5,10 @@ langchain-openai==0.3.8
 matplotlib==3.9.2
 pandas==2.2.3
 openpyxl
-langchain-openai
+bcrypt
+pyodbc
+snowflake-connector-python
+cryptography
+
 
 
