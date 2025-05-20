@@ -298,7 +298,7 @@ def migrate_default_prompt_to_agent(rag_agent_id: int):
 def load_admin_prompts(rag_agent_id=None):
     with sqlite3.connect(DB_NAME) as conn:
         print(f"I am in load_admin_prompts+{rag_agent_id}")
-        rag_agent_id = 3
+        #rag_agent_id = 3
         if rag_agent_id:
             cur = conn.execute("""
                 SELECT

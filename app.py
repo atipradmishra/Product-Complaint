@@ -88,8 +88,37 @@ def dashboard():
             continue
     
     # ✅ Use correct agent ID from session
+    #rag_agent_id = session.get("agent_id")
+
+
+
+    def get_sqlite_agent_id():
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM connections WHERE LOWER(source) = 'sqlite' ORDER BY id LIMIT 1")
+        row = cursor.fetchone()
+        conn.close()
+        return row[0] if row else None
+
+    def is_sqlite_agent(agent_id):
+        if not agent_id:
+            return False
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("SELECT source FROM connections WHERE id = ?", (agent_id,))
+        row = cursor.fetchone()
+        conn.close()
+        return row and row[0].lower() == "sqlite"
+
+    # ✅ Verify session agent_id and fallback only if source isn't SQLite
     rag_agent_id = session.get("agent_id")
-    print("🧠 Using agent_id from session:", rag_agent_id)
+
+    if not is_sqlite_agent(rag_agent_id):
+        rag_agent_id = get_sqlite_agent_id()
+        session["agent_id"] = rag_agent_id
+
+    print("✅ Final agent_id being used:", rag_agent_id)
+
 
     admin_prompts = load_admin_prompts(rag_agent_id=rag_agent_id)
     summary_prompt = admin_prompts.get("dashboard_summary_prompt", "") if admin_prompts else ""
@@ -102,6 +131,15 @@ def dashboard():
                 "prompt": summary_prompt
             }
             summary_text = generate_rag_response(summary_payload)
+            
+            summary_payload = {
+                "charts": chart_data,
+                "prompt": summary_prompt
+            }
+            #summary_text = generate_rag_response(summary_payload, user_question="Dashboard summary")
+            summary_text = generate_rag_response(summary_payload)
+
+
 
         except Exception as e:
             print("❌ Summary generation failed:", e)
