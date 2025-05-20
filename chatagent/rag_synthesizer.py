@@ -67,28 +67,24 @@ def generate_rag_response_BKP(result: dict, user_question: str) -> str:
         logging.error(f"Error generating human-readable summary: {e}")
         return f"⚠️ Error generating summary."
 
-def generate_rag_response(data: dict) -> str:
+def generate_rag_response(result: dict, user_question: str) -> str:
     try:
-        charts = data.get("charts", [])
-        prompt = data.get("prompt", "")
-
-        if not charts or not prompt:
-            return "⚠️ Missing charts or prompt data for summary generation."
+        result = clean_result_data(result)
 
         summary_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a pharma product complaint analyst. Analyze the following dashboard charts and generate a clear, leadership-ready summary that includes trends, patterns, outliers, and business insights."),
-            ("user", "{prompt}\n\nHere is the structured chart data:\n{json_data}\n\nSummarize this dashboard.")
+            ("system", "You are a pharma product complaint analyst who explains structured JSON data in a friendly and natural tone. Your job is to analyze user queries and provide your response in a concrete and concise manner. Answer the user's question precisely using only the data provided."),
+            ("user", "User asked: {question}\n\nHere is the structured data returned:\n{json_data}\n\nWrite a natural language summary of this.")
         ])
 
         chain = summary_prompt | llm | StrOutputParser()
 
         response = chain.invoke({
-            "prompt": prompt,
-            "json_data": json.dumps(charts, indent=2)
+            "question": user_question,
+            "json_data": json.dumps(result, indent=2)
         })
 
         return response
 
     except Exception as e:
         logging.error(f"Error generating human-readable summary: {e}")
-        return "⚠️ Error generating summary."
+        return f"⚠ Error generating summary."
