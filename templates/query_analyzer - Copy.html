@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% block title %}Prompt Configuration{% endblock %}
+{% block content %}
+<div class="ml-64 p-6 min-h-screen">
+    <h1 class="text-2xl font-bold mb-6">Prompt Configuration</h1>
+
+    <!-- Agent Selector -->
+    <div class="mb-2">
+        <label for="agent-select" class="block mb-1 text-sm font-semibold text-gray-700">Select RAG Agent:</label>
+        <select id="agent-select" class="border rounded px-3 py-2 w-full">
+            <option value="" selected>-- Choose Agent --</option>
+        </select>
+    </div>
+
+    <!-- SQL Query Generator Prompt -->
+    <div class="bg-white shadow rounded-lg mb-6 p-6">
+        <h2 class="text-lg font-semibold mb-4">SQL Query Analyzer Prompt</h2>
+        <form id="sql-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium">SQL System Prompt</label>
+                <textarea name="sql_system_prompt" rows="2" class="w-full mt-1 p-2 border rounded"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium">SQL Task</label>
+                <textarea name="sql_task" rows="2" class="w-full mt-1 p-2 border rounded"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium">SQL Instruction</label>
+                <textarea name="sql_instruction" rows="2" class="w-full mt-1 p-2 border rounded"></textarea>
+            </div>
+        </form>
+    </div>
+
+    <!-- Query Synthesizer Prompt -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-lg font-semibold mb-4">Query Synthesizer Prompt</h2>
+        <form id="synth-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium">Synthesizer System Prompt</label>
+                <textarea name="synthesizer_system_prompt" rows="2" class="w-full mt-1 p-2 border rounded"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Synthesizer Task</label>
+                <textarea name="synthesizer_task" rows="2" class="w-full mt-1 p-2 border rounded"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Synthesizer Instruction</label>
+                <textarea name="synthesizer_instruction" rows="2" class="w-full mt-1 p-2 border rounded"></textarea>
+            </div>
+        </form>
+    </div>
+
+       <!-- Dashboard Summary Prompt -->
+    <div class="bg-white shadow rounded-lg p-6 mt-6">
+        <h2 class="text-lg font-semibold mb-4">Dashboard AI Summary Prompt</h2>
+        <form id="summary-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium">Dashboard Summary Prompt</label>
+                <textarea name="dashboard_summary_prompt" rows="3" class="w-full mt-1 p-2 border rounded"></textarea>
+            </div>
+        </form>
+    </div>
+
+    <!-- Save Button -->
+    <div class="mt-6 flex justify-center">
+        <button id="save-prompts" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Save All Prompts</button>
+    </div>
+
+    <!-- Success Message -->
+    <div id="save-message" class="text-green-600 text-center mt-4 hidden">
+        ✅ Prompt saved successfully!
+    </div>
+</div>
+   
+
+<script>
+    function clearPromptFields() {
+        document.querySelector('[name=sql_system_prompt]').value = "";
+        document.querySelector('[name=sql_task]').value = "";
+        document.querySelector('[name=sql_instruction]').value = "";
+        document.querySelector('[name=synthesizer_system_prompt]').value = "";
+        document.querySelector('[name=synthesizer_task]').value = "";
+        document.querySelector('[name=synthesizer_instruction]').value = "";
+        document.querySelector('[name=dashboard_summary_prompt]').value = "";
+    }
+
+    async function loadPromptsForAgent(agentId = "") {
+        if (!agentId) {
+            clearPromptFields();
+            return;
+        }
+
+        try {
+            const res = await fetch(`/admin/load_prompts?rag_agent_id=${agentId}`);
+            if (res.ok) {
+                const data = await res.json();
+                document.querySelector('[name=sql_system_prompt]').value = data.sql_system_prompt || "";
+                document.querySelector('[name=sql_task]').value = data.sql_task || "";
+                document.querySelector('[name=sql_instruction]').value = data.sql_instruction || "";
+                document.querySelector('[name=synthesizer_system_prompt]').value = data.synthesizer_system_prompt || "";
+                document.querySelector('[name=synthesizer_task]').value = data.synthesizer_task || "";
+                document.querySelector('[name=synthesizer_instruction]').value = data.synthesizer_instruction || "";
+                document.querySelector('[name=dashboard_summary_prompt]').value = data.dashboard_summary_prompt || "";
+            } else {
+                clearPromptFields();
+            }
+        } catch (err) {
+            console.error("❌ Failed to load prompts", err);
+            clearPromptFields();
+        }
+    }
+
+    window.onload = async () => {
+        clearPromptFields();  // Clear all fields on load
+
+        // Load agents into dropdown
+        try {
+            const res = await fetch("/get-connections");
+            const agents = await res.json();
+            const dropdown = document.getElementById("agent-select");
+
+            agents.forEach(agent => {
+                const option = document.createElement("option");
+                option.value = agent.id;
+                option.textContent = agent.name;
+                dropdown.appendChild(option);
+            });
+                // ✅ Auto-load last selected agent from session (new route needed)
+            const sessionRes = await fetch("/get-session-agent");
+            const sessionData = await sessionRes.json();
+            const agentId = sessionData.agent_id;
+
+            if (agentId) {
+                dropdown.value = agentId;
+                await loadPromptsForAgent(agentId);
+            }
+        } catch (err) {
+            console.error("❌ Failed to load agents", err);
+        }
+
+        // Handle agent change
+        document.getElementById("agent-select").addEventListener("change", async (e) => {
+            const agentId = e.target.value;
+            await loadPromptsForAgent(agentId);
+        });
+    };
+
+    document.getElementById('save-prompts').addEventListener('click', async () => {
+        const agentId = document.getElementById('agent-select').value;
+        const finalAgentId = agentId || null;
+
+        const payload = {
+            sql_system_prompt: document.querySelector('[name=sql_system_prompt]').value,
+            sql_task: document.querySelector('[name=sql_task]').value,
+            sql_instruction: document.querySelector('[name=sql_instruction]').value,
+            synthesizer_system_prompt: document.querySelector('[name=synthesizer_system_prompt]').value,
+            synthesizer_task: document.querySelector('[name=synthesizer_task]').value,
+            synthesizer_instruction: document.querySelector('[name=synthesizer_instruction]').value,
+            dashboard_summary_prompt: document.querySelector('[name=dashboard_summary_prompt]').value,
+            rag_agent_id: agentId
+        };
+
+        try {
+        console.log("🧾 Payload being sent:", payload);
+        const res = await fetch('/admin/save_prompts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            const msg = document.getElementById("save-message");
+            msg.classList.remove("hidden");
+            setTimeout(() => msg.classList.add("hidden"), 3000);
+        } else {
+            const errorText = await res.text();
+            console.error("❌ Save error:", errorText);
+            alert("Failed to save prompts.\nDetails: " + errorText);
+        }
+    } catch (err) {
+        console.error("❌ Request failed:", err);
+        alert("An unexpected error occurred while saving the prompts.");
+    }
+});
+</script>
+{% endblock %}

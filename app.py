@@ -1,9 +1,9 @@
-from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
+from flask import Flask, render_template, jsonify, request, flash, redirect, session, url_for
 from gpt_client import create_invoke_chain, llm
 from chatagent.sql_copilot import get_sql_from_question
 from chatagent.rag_synthesizer import generate_rag_response
 from sql_query_executor import run_sql_with_connection, run_sql
-from db_manager import create_chart_config_table, create_chat_logs_table, create_users_table, delete_chart_config_by_id, get_all_chart_configs, get_metadata_column_names, get_recent_chat_history, register_user, authenticate_user, init_admin_prompts, save_admin_prompts, load_admin_prompts, log_chat_interaction, save_chart_config_to_db, save_or_update_chart_config
+from db_manager import create_chart_config_table, create_chat_logs_table, create_users_table, delete_chart_config_by_id, fetch_query_logs, get_all_chart_configs, get_metadata_column_names, get_recent_chat_history, register_user, authenticate_user, init_admin_prompts, save_admin_prompts, load_admin_prompts, log_chat_interaction, save_chart_config_to_db, save_or_update_chart_config,save_query_log_to_db
 from dataagent.s3_database_upload import upload_s3_database_update
 import json
 import os
@@ -86,11 +86,31 @@ def dashboard():
         except Exception as e:
             print(f"⚠️ Failed to process chart: {cfg.get('chart_title', 'Unknown')} — {e}")
             continue
+    
+    # ✅ Use correct agent ID from session
+    rag_agent_id = session.get("agent_id")
+    print("🧠 Using agent_id from session:", rag_agent_id)
+
+    admin_prompts = load_admin_prompts(rag_agent_id=rag_agent_id)
+    summary_prompt = admin_prompts.get("dashboard_summary_prompt", "") if admin_prompts else ""
+
+    summary_text = ""
+    if summary_prompt:
+        try:
+            summary_payload = {
+                "charts": chart_data,
+                "prompt": summary_prompt
+            }
+            summary_text = generate_rag_response(summary_payload)
+
+        except Exception as e:
+            print("❌ Summary generation failed:", e)
 
     return render_template(
         "dashboard.html",
         chart_configs=chart_configs,
-        chart_data_json=json.dumps(chart_data)
+        chart_data_json=json.dumps(chart_data),
+        ai_summary=summary_text
     )
 
 fernet = Fernet(FERNET_KEY)
@@ -138,15 +158,32 @@ def save_prompts():
     return jsonify({"status": "success"})
 
 
-@app.route("/admin/load_prompts", methods=["GET"])
-def load_prompts():
+@app.route("/admin/load_prompts1", methods=["GET"])
+def load_prompts1():
     agent_id = request.args.get("rag_agent_id")
     data = load_admin_prompts(agent_id)
     if data:
         return jsonify(data)
     return jsonify({"error": "Prompt data not found"}), 404
 
+@app.route("/admin/load_prompts", methods=["GET"])
+def load_prompts():
+    rag_agent_id = request.args.get("rag_agent_id")
+    if not rag_agent_id or rag_agent_id == "null":
+        rag_agent_id = None
+    else:
+        try:
+            rag_agent_id = int(rag_agent_id)
+        except ValueError:
+            return jsonify({"error": "Invalid agent ID"}), 400
 
+    # ✅ Save selected agent in session
+    session["agent_id"] = rag_agent_id
+
+    data = load_admin_prompts(rag_agent_id=rag_agent_id)
+    if data:
+        return jsonify(data)
+    return jsonify({"error": "Prompt data not found"}), 404
 
 @app.route("/get-connections", methods=["GET"])
 def get_connections():
@@ -183,7 +220,10 @@ def connect_agent():
         source = connection.get("source", "").lower()
 
         if source == "sqlite":
+            if not connection.get("sql_database"):
+                connection["sql_database"] = DB_NAME
             sqlite3.connect(connection["sql_database"]).close()
+
         elif source == "azure":
             conn_str = (
                 f"DRIVER={{{connection['driver']}}};"
@@ -226,7 +266,7 @@ def copilot_query():
 
         if not row:
             return jsonify({"response": "Selected agent not found."})
-
+        session["agent_id"] = agent_id
         connection = dict(zip(column_names, row))
         if connection.get("pwd"):
             try:
@@ -236,10 +276,20 @@ def copilot_query():
 
         source = connection.get("source", "").lower()
 
+        # ✅ Fallback for SQLite database
+        if source == "sqlite" and not connection.get("sql_database"):
+            connection["sql_database"] = DB_NAME
+
+        # ✅ Handle source-specific metadata + table name
         if source == "snowflake":
             table_name = get_first_table_name_snowflake(connection)
             column_info = get_snowflake_table_metadata(connection)
-            generated = get_sql_from_question(user_query, table_name=table_name, conn_details=connection, column_info=column_info)
+            generated = get_sql_from_question(
+                user_query,
+                table_name=table_name,
+                conn_details=connection,
+                column_info=column_info
+            )
         elif source == "azure":
             conn_str = (
                 f"DRIVER={{{connection['driver']}}};"
@@ -250,18 +300,55 @@ def copilot_query():
                 f"Encrypt=yes;TrustServerCertificate=no;Connection Timeout=5;"
             )
             table_name = get_first_table_name_azure(conn_str)
-            generated = get_sql_from_question(user_query, table_name=table_name, conn_details=connection)
+            generated = get_sql_from_question(
+                user_query,
+                table_name=table_name,
+                conn_details=connection
+            )
+        elif source == "sqlite":
+            def get_first_table_name_sqlite(db_path):
+                try:
+                    conn = sqlite3.connect(db_path)
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name LIMIT 1")
+                    result = cursor.fetchone()
+                    return result[0] if result else None
+                except Exception:
+                    return None
+
+            table_name = get_first_table_name_sqlite(connection["sql_database"])
+            from chatagent.sql_copilot import load_column_info_from_db
+            column_info = load_column_info_from_db(connection)
+            generated = get_sql_from_question(
+                user_query,
+                table_name=table_name,
+                conn_details=connection,
+                column_info=column_info
+            )
         else:
             generated = get_sql_from_question(user_query)
 
+        # ✅ Run the query and generate a summary
         if isinstance(generated, dict) and "sql" in generated:
             sql = generated["sql"]
+
+            # ✅ Remove 'dbo.' for non-SQL Server engines
+            if source in ["sqlite", "snowflake", "mysql", "postgresql", "oracle"]:
+                sql = sql.replace("dbo.", "")
+
             result = run_sql_with_connection(sql, connection)
-            
+
             print(f"📄 Generated SQL:\n{sql}")
             print(f"📊 Query Result Rows:\n{result['rows']}")
             rag_response = generate_rag_response(result, user_query)
             log_chat_interaction(user_query, sql, result, rag_response)
+
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open("sqlquery_log.txt", "a", encoding="utf-8") as log_file:
+                log_file.write(f"{timestamp} | USER QUERY: {user_query} | SQL: {sql} | RESULT: {rag_response}\n")
+
+            save_query_log_to_db(timestamp, user_query, sql, rag_response)
+
         else:
             raise ValueError("No SQL generated.")
 
@@ -270,6 +357,9 @@ def copilot_query():
         rag_response = "Sorry, something went wrong while processing your request."
 
     return jsonify({"response": rag_response})
+
+
+
 
 
 def get_first_table_name_azure(conn_str):
@@ -565,6 +655,71 @@ def debug_connections():
     rows = cursor.fetchall()
     conn.close()
     return jsonify(rows)
+
+def get_first_table_name_sqlite(db_path):
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name LIMIT 1")
+        result = cursor.fetchone()
+        return result[0] if result else None
+    except Exception:
+        return None
+
+@app.route("/query-log-analyzer")
+def query_log_analyzer():
+    logs = fetch_query_logs(limit=300)
+    return render_template("query_log_analyzer.html", logs=logs)
+
+
+@app.route("/admin/save-summary-prompt", methods=["POST"])
+def save_summary_prompt():
+    data = request.get_json()
+    prompt = data.get("summary_prompt", "")
+    with sqlite3.connect(DB_NAME) as conn:
+        conn.execute("UPDATE admin_prompts SET dashboard_summary_prompt = ? WHERE id = 1", (prompt,))
+        conn.commit()
+    return jsonify({"status": "success"})
+
+@app.route("/graph-query")
+def qgraph_query():
+    #logs = fetch_query_logs(limit=300)
+    return render_template("work_in_progress.html")
+
+@app.route("/deviation-analysis")
+def deviation_analysis():
+    #logs = fetch_query_logs(limit=300)
+    return render_template("work_in_progress.html")
+
+@app.route("/root-cause")
+def root_cause():
+    #logs = fetch_query_logs(limit=300)
+    return render_template("work_in_progress.html")
+
+@app.route("/analysis-history")
+def analysis_history():
+    #logs = fetch_query_logs(limit=300)
+    return render_template("work_in_progress.html")
+
+@app.route("/user-feedback")
+def user_feedback():
+    #logs = fetch_query_logs(limit=300)
+    return render_template("work_in_progress.html")
+
+@app.route("/fine-tuning")
+def fine_tuning():
+    #logs = fetch_query_logs(limit=300)
+    return render_template("work_in_progress.html")
+
+@app.route("/settings")
+def settings():
+    #logs = fetch_query_logs(limit=300)
+    return render_template("work_in_progress.html")
+
+@app.route("/processed-data")
+def processed_data():
+    #logs = fetch_query_logs(limit=300)
+    return render_template("work_in_progress.html")
 
 
 if __name__ == "__main__":

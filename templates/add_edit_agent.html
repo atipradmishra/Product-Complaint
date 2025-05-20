@@ -32,6 +32,7 @@
             <option value="oracle">Oracle</option>
             <option value="postgresql">PostgreSQL</option>
             <option value="snowflake">Snowflake</option>
+			<option value="sqlite">SQLite</option>
         </select>
       </div>
 
@@ -132,7 +133,6 @@
   </div>
 </div>
 
-
 <script>
   const sourceSelector = document.getElementById('source');
   const modal = document.getElementById('connModal');
@@ -140,20 +140,27 @@
   const snowflakeFields = document.getElementById('snowflake-fields');
   const relationalFields = document.getElementById('relational-fields');
 
+  function toggleFieldsForSource(source) {
+    if (source === 'sqlite') {
+      relationalFields.classList.add('hidden');
+      snowflakeFields.classList.add('hidden');
+    } else if (source === 'snowflake') {
+      relationalFields.classList.add('hidden');
+      snowflakeFields.classList.remove('hidden');
+    } else {
+      relationalFields.classList.remove('hidden');
+      snowflakeFields.classList.add('hidden');
+    }
+  }
+
   sourceSelector.addEventListener('change', function () {
     const selected = this.value;
+
+    toggleFieldsForSource(selected);
 
     if (selected !== 'csv') {
       modal.classList.remove('hidden');
       modal.classList.add('flex');  // Show modal as flex
-
-      if (selected === 'snowflake') {
-        snowflakeFields.classList.remove('hidden');
-        relationalFields.classList.add('hidden');
-      } else {
-        snowflakeFields.classList.add('hidden');
-        relationalFields.classList.remove('hidden');
-      }
 
       let sourceInput = connForm.querySelector('input[name="source"]');
       if (!sourceInput) {
@@ -224,6 +231,13 @@
       alert('Error saving connection: ' + err.message);
     });
   }
+
+  // Run once on load
+  document.addEventListener('DOMContentLoaded', () => {
+    toggleFieldsForSource(sourceSelector.value);
+  });
 </script>
+
+
 
 {% endblock %}

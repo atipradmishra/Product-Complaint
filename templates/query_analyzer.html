@@ -32,7 +32,7 @@
     </div>
 
     <!-- Query Synthesizer Prompt -->
-    <div class="bg-white shadow rounded-lg p-6">
+    <div class="bg-white shadow rounded-lg mb-6 p-6">
         <h2 class="text-lg font-semibold mb-4">Query Synthesizer Prompt</h2>
         <form id="synth-form" class="space-y-4">
             <div>
@@ -46,6 +46,17 @@
             <div>
                 <label class="block text-sm font-medium">Synthesizer Instruction</label>
                 <textarea name="synthesizer_instruction" rows="2" class="w-full mt-1 p-2 border rounded"></textarea>
+            </div>
+        </form>
+    </div>
+
+    <!-- Dashboard Summary Prompt -->
+    <div class="bg-white shadow rounded-lg p-6 mt-6">
+        <h2 class="text-lg font-semibold mb-4">Dashboard AI Summary Prompt</h2>
+        <form id="summary-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium">Dashboard Summary Prompt</label>
+                <textarea name="dashboard_summary_prompt" rows="3" class="w-full mt-1 p-2 border rounded"></textarea>
             </div>
         </form>
     </div>
@@ -69,11 +80,12 @@
         document.querySelector('[name=synthesizer_system_prompt]').value = "";
         document.querySelector('[name=synthesizer_task]').value = "";
         document.querySelector('[name=synthesizer_instruction]').value = "";
+        document.querySelector('[name=dashboard_summary_prompt]').value = "";
     }
 
     async function loadPromptsForAgent(agentId = "") {
         if (!agentId) {
-            clearPromptFields();
+            await loadPromptsForAgent(null); 
             return;
         }
 
@@ -87,6 +99,7 @@
                 document.querySelector('[name=synthesizer_system_prompt]').value = data.synthesizer_system_prompt || "";
                 document.querySelector('[name=synthesizer_task]').value = data.synthesizer_task || "";
                 document.querySelector('[name=synthesizer_instruction]').value = data.synthesizer_instruction || "";
+                document.querySelector('[name=dashboard_summary_prompt]').value = data.dashboard_summary_prompt || "";
             } else {
                 clearPromptFields();
             }
@@ -97,48 +110,57 @@
     }
 
     window.onload = async () => {
-        clearPromptFields();  // Clear all fields on load
+    clearPromptFields();
 
-        // Load agents into dropdown
-        try {
-            const res = await fetch("/get-connections");
-            const agents = await res.json();
-            const dropdown = document.getElementById("agent-select");
+    try {
+        const res = await fetch("/get-connections");
+        const agents = await res.json();
+        const dropdown = document.getElementById("agent-select");
 
-            agents.forEach(agent => {
-                const option = document.createElement("option");
-                option.value = agent.id;
-                option.textContent = agent.name;
-                dropdown.appendChild(option);
-            });
-        } catch (err) {
-            console.error("❌ Failed to load agents", err);
+        agents.forEach(agent => {
+            const option = document.createElement("option");
+            option.value = agent.id;
+            option.textContent = agent.name;
+            dropdown.appendChild(option);
+        });
+
+        // ✅ Auto-load last selected agent from session (new route needed)
+        const sessionRes = await fetch("/get-session-agent");
+        const sessionData = await sessionRes.json();
+        const agentId = sessionData.agent_id;
+
+        if (agentId) {
+            dropdown.value = agentId;
+            await loadPromptsForAgent(agentId);
         }
 
-        // Handle agent change
-        document.getElementById("agent-select").addEventListener("change", async (e) => {
-            const agentId = e.target.value;
-            await loadPromptsForAgent(agentId);
-        });
-    };
+    } catch (err) {
+        console.error("❌ Failed to load agents or session", err);
+    }
+
+    document.getElementById("agent-select").addEventListener("change", async (e) => {
+        const agentId = e.target.value;
+        await loadPromptsForAgent(agentId);
+    });
+};
 
     document.getElementById('save-prompts').addEventListener('click', async () => {
-        const agentId = document.getElementById('agent-select').value;
-        if (!agentId) {
-            alert("Please select a RAG Agent before saving.");
-            return;
-        }
+    const agentId = document.getElementById('agent-select').value;
+    const finalAgentId = agentId || null;
 
-        const payload = {
-            sql_system_prompt: document.querySelector('[name=sql_system_prompt]').value,
-            sql_task: document.querySelector('[name=sql_task]').value,
-            sql_instruction: document.querySelector('[name=sql_instruction]').value,
-            synthesizer_system_prompt: document.querySelector('[name=synthesizer_system_prompt]').value,
-            synthesizer_task: document.querySelector('[name=synthesizer_task]').value,
-            synthesizer_instruction: document.querySelector('[name=synthesizer_instruction]').value,
-            rag_agent_id: agentId
-        };
+    const payload = {
+        sql_system_prompt: document.querySelector('[name=sql_system_prompt]').value,
+        sql_task: document.querySelector('[name=sql_task]').value,
+        sql_instruction: document.querySelector('[name=sql_instruction]').value,
+        synthesizer_system_prompt: document.querySelector('[name=synthesizer_system_prompt]').value,
+        synthesizer_task: document.querySelector('[name=synthesizer_task]').value,
+        synthesizer_instruction: document.querySelector('[name=synthesizer_instruction]').value,
+        dashboard_summary_prompt: document.querySelector('[name=dashboard_summary_prompt]').value,
+        rag_agent_id: finalAgentId
+    };
 
+    try {
+        console.log("🧾 Payload being sent:", payload);
         const res = await fetch('/admin/save_prompts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -150,8 +172,15 @@
             msg.classList.remove("hidden");
             setTimeout(() => msg.classList.add("hidden"), 3000);
         } else {
-            alert("Failed to save prompts. Please try again.");
+            const errorText = await res.text();
+            console.error("❌ Save error:", errorText);
+            alert("Failed to save prompts.\nDetails: " + errorText);
         }
-    });
+    } catch (err) {
+        console.error("❌ Request failed:", err);
+        alert("An unexpected error occurred while saving the prompts.");
+    }
+});
+
 </script>
 {% endblock %}

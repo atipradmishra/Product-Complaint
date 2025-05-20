@@ -45,7 +45,7 @@ def qualify_table_names(sql: str, conn_details: dict) -> str:
 
     return sql
 
-def generate_rag_response(result: dict, user_question: str) -> str:
+def generate_rag_response_BKP(result: dict, user_question: str) -> str:
     try:
         result = clean_result_data(result)
 
@@ -66,3 +66,29 @@ def generate_rag_response(result: dict, user_question: str) -> str:
     except Exception as e:
         logging.error(f"Error generating human-readable summary: {e}")
         return f"⚠️ Error generating summary."
+
+def generate_rag_response(data: dict) -> str:
+    try:
+        charts = data.get("charts", [])
+        prompt = data.get("prompt", "")
+
+        if not charts or not prompt:
+            return "⚠️ Missing charts or prompt data for summary generation."
+
+        summary_prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are a pharma product complaint analyst. Analyze the following dashboard charts and generate a clear, leadership-ready summary that includes trends, patterns, outliers, and business insights."),
+            ("user", "{prompt}\n\nHere is the structured chart data:\n{json_data}\n\nSummarize this dashboard.")
+        ])
+
+        chain = summary_prompt | llm | StrOutputParser()
+
+        response = chain.invoke({
+            "prompt": prompt,
+            "json_data": json.dumps(charts, indent=2)
+        })
+
+        return response
+
+    except Exception as e:
+        logging.error(f"Error generating human-readable summary: {e}")
+        return "⚠️ Error generating summary."

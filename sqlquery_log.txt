@@ -1,0 +1,58 @@
+2025-05-20 09:49:59 | USER QUERY: What is the total complaints based on origin site name ? | SQL: SELECT t1.ORIGIN_SITE_NAME, COUNT(t1.ID) AS Total_Complaints FROM RAW_DATA AS t1 GROUP BY t1.ORIGIN_SITE_NAME | RESULT: Sure! Here's a breakdown of the total complaints received from various origin sites:
+
+- The United States tops the list with 83 complaints.
+- Canada follows with 14 complaints.
+- Spain and Rio de Janeiro each have 8 complaints.
+- The United Kingdom and Taiwan both have 7 complaints.
+- France has 6 complaints.
+- Basel Complaint Management received 5 complaints.
+- Brazil, Uruguay, and Mexico each have 4 complaints.
+- Malaysia, Hong Kong, and Korea Republic of each reported 3 complaints.
+- Several locations, including Greece, Lebanon, Czech Republic, IMP Complaint Management, Austria, Finland, Thailand, Germany, Colombia, Japan, and India, each have 2 complaints.
+- A number of sites, such as Turkiye, ROCHE MALAYSIA SDN BHD, Iceland, Australia, Norway, Italy, Chugai, Switzerland, Croatia, Indonesia, Portugal, Russian Federation, Egypt, Serbia, Shanghai, Saudi Arabia, DOBROLEK OOO, ROCHE PHILIPPINES INC, Ireland, Basel Kaiseraugst Site (PS), and External Quality (PTQX), each reported 1 complaint.
+
+This gives a comprehensive overview of the distribution of complaints across different sites.
+2025-05-20 10:48:15 | USER QUERY: What is the total complaints based on origin site name ? | SQL: SELECT t1.ORIGIN_SITE_NAME, COUNT(t1.ID) AS Total_Complaints FROM RAW_DATA t1 GROUP BY t1.ORIGIN_SITE_NAME | RESULT: Sure! Here's a breakdown of the total complaints based on their origin site:
+
+- The United States leads with 83 complaints.
+- Spain and Rio de Janeiro each have 8 complaints.
+- Canada has 14 complaints.
+- Taiwan and the United Kingdom both have 7 complaints.
+- France has 6 complaints.
+- Basel Complaint Management has 5 complaints.
+- Brazil, Mexico, and Uruguay each have 4 complaints.
+- Malaysia, Hong Kong, and Korea Republic of each have 3 complaints.
+- Several countries, including Greece, Lebanon, Czech Republic, IMP Complaint Management, Austria, Finland, Thailand, Germany, Colombia, Japan, and India, each have 2 complaints.
+- Many other sites and countries, such as Turkiye, ROCHE MALAYSIA SDN BHD, Iceland, Australia, Norway, Italy, Chugai, Switzerland, Croatia, Indonesia, Portugal, Russian Federation, Egypt, Serbia, Shanghai, Saudi Arabia, DOBROLEK OOO, ROCHE PHILIPPINES INC, Ireland, Basel Kaiseraugst Site (PS), and External Quality (PTQX), each have a single complaint.
+
+Overall, the data shows a wide distribution of complaints across various global sites.
+2025-05-20 10:57:09 | USER QUERY: What is the total complaints based on origin site name ? | SQL: SELECT t1.ORIGIN_SITE_NAME, COUNT(t1.ID) AS Total_Complaints FROM RAW_DATA t1 GROUP BY t1.ORIGIN_SITE_NAME; | RESULT: Certainly! Here's a breakdown of the total complaints based on their origin site name:
+
+- The United States leads with the highest number of complaints, totaling 83.
+- Canada follows with 14 complaints.
+- Spain and Rio de Janeiro both have 8 complaints each.
+- The United Kingdom and Taiwan each reported 7 complaints.
+- France has 6 complaints.
+- Basel Complaint Management recorded 5 complaints.
+- Brazil, Uruguay, and Mexico each have 4 complaints.
+- Malaysia, Hong Kong, and Korea Republic of each have 3 complaints.
+- Greece, Lebanon, Czech Republic, IMP Complaint Management, Austria, Finland, Thailand, Germany, Italy, Colombia, Japan, and India each reported 2 complaints.
+- Numerous sites, including Turkiye, ROCHE MALAYSIA SDN BHD, Iceland, Australia, Norway, Chugai, Switzerland, Croatia, Indonesia, Portugal, Russian Federation, Egypt, Serbia, Shanghai, Saudi Arabia, DOBROLEK OOO, ROCHE PHILIPPINES INC, Ireland, Basel Kaiseraugst Site (PS), and External Quality (PTQX), each reported 1 complaint.
+
+This summary gives you a clear picture of where complaints are originating from across different regions and sites.
+2025-05-20 10:58:30 | USER QUERY: What is the total complaints based on origin site name ? | SQL: SELECT t1.ORIGIN_SITE_NAME, COUNT(*) AS total_complaints FROM RAW_DATA t1 GROUP BY t1.ORIGIN_SITE_NAME; | RESULT: Sure! Here's a summary of the total complaints based on the origin site name:
+
+- The United States has the highest number of complaints, totaling 83.
+- Canada follows with 14 complaints.
+- Spain and Rio de Janeiro each have 8 complaints.
+- The United Kingdom and Taiwan both have 7 complaints.
+- France has 6 complaints.
+- Basel Complaint Management has 5 complaints.
+- Uruguay, Mexico, and Brazil each report 4 complaints.
+- Hong Kong, Korea Republic of, and Malaysia have 3 complaints each.
+- Greece, Czech Republic, IMP Complaint Management, Finland, Colombia, Japan, India, Lebanon, Austria, Thailand, and Germany each have 2 complaints.
+- Several sites, including Turkiye, Russian Federation, ROCHE MALAYSIA SDN BHD, Iceland, Egypt, Italy, Shanghai, Indonesia, Chugai, Serbia, Basel Kaiseraugst Site (PS), External Quality (PTQX), Ireland, ROCHE PHILIPPINES INC, Norway, Portugal, Switzerland, DOBROLEK OOO, Croatia, Australia, Saudi Arabia, and Switzerland, each have 1 complaint.
+
+This gives a broad view of how complaints are distributed across different regions and sites.
+2025-05-20 10:58:49 | USER QUERY: What is the total complaints based on origin site name  Canada? | SQL: SELECT COUNT(t1.ID) AS Total_Complaints FROM RAW_DATA t1 WHERE t1.ORIGIN_SITE_NAME = 'Canada'; | RESULT: There have been a total of 14 complaints originating from Canada.
+2025-05-20 11:02:14 | USER QUERY: What is the total complaints based on origin site name is Canada? | SQL: SELECT COUNT(t1.ID) AS TotalComplaints FROM RAW_DATA t1 WHERE t1.ORIGIN_SITE_NAME = 'Canada'; | RESULT: There have been a total of 14 complaints originating from sites in Canada.

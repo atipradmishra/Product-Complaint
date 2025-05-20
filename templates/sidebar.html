@@ -1,4 +1,4 @@
-<!-- Tailwind CDN for demo (Remove if already imported in your project) -->
+   <!-- Tailwind CDN for demo (Remove if already imported in your project) -->
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
@@ -9,10 +9,10 @@
     padding: 12px 0;
     position: absolute;
     bottom: 0;
-    left: 0;
+    left:0;
     width: 100%;
   }
-
+   
   .logo {
     margin: 10px auto;
     display: block;
@@ -42,17 +42,16 @@
   .radio-hidden {
     display: none;
   }
+
 </style>
-
 <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-white shadow-md border-r z-40 -translate-x-full lg:translate-x-0 flex flex-col">
-
   <!-- Logo -->
-  <img src="/static/logo.png" alt="logo" class="logo" />
+  <img src="/static/logo.webp" alt="logo" class="logo" />
 
   <!-- Sidebar Content -->
   <div class="flex-1 px-4 pt-2 text-sm text-gray-900 overflow-y-auto">
     <form method="POST" action="/select-agent">
-      
+
       <!-- AI Agent Selector -->
       <div class="mb-6">
         <label class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Select AI Agent</label>
@@ -82,7 +81,7 @@
     </form>
   </div>
 
-  <!-- Footer -->
+ <!-- Footer -->
   <div id="powered-by">Powered by CloudHub</div>
 </div>
 
@@ -101,7 +100,8 @@
     data_mgmt: [
       { name: "Data Dashboard", path: "/data-dashboard" },
       { name: "Data Pipeline", path: "/data-management" },
-      { name: "Processed Data", path: "/processed-data" }
+      { name: "Processed Data", path: "/processed-data" },
+      { name: "Configure Dashboard", path: "/data-dash-config" }
     ],
     rag: [
       { name: "RAG Dashboard", path: "/rag-dashboard" },
@@ -122,7 +122,7 @@
         return key;
       }
     }
-    return "data_mgmt";
+    return "data_mgmt"; // fallback
   }
 
   function renderSections(agentKey) {

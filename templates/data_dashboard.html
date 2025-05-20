@@ -5,38 +5,38 @@
 <div class="ml-64 p-6">
   <!-- Header -->
   <div class="bg-blue-900 text-white rounded-lg p-6 mb-6 text-center shadow">
-    <h1 class="text-2xl font-bold">Data File Tracking Dashboard</h1>
-    <p class="text-sm mt-1">Real-time monitoring of processed files</p>
+    <h1 class="text-2xl font-bold">Data Source Connection Dashboard</h1>
+    <p class="text-sm mt-1">Monitoring connected sources and schemas</p>
   </div>
 
   <!-- Overview Cards -->
   <div class="grid grid-cols-4 gap-4 mb-6">
     <div class="bg-white shadow p-4 rounded-lg text-center">
-      <div class="text-2xl">📊</div>
-      <p class="text-xl font-bold">14</p>
-      <p class="text-sm text-gray-600">Total Datasets</p>
+      <div class="text-2xl">🔌</div>
+      <p class="text-xl font-bold">3</p>
+      <p class="text-sm text-gray-600">Total Data Sources</p>
     </div>
     <div class="bg-white shadow p-4 rounded-lg text-center">
-      <div class="text-2xl">🔵</div>
-      <p class="text-xl font-bold">1</p>
-      <p class="text-sm text-gray-600">CO2 Files</p>
+      <div class="text-2xl">🧬</div>
+      <p class="text-xl font-bold">7</p>
+      <p class="text-sm text-gray-600">Total Schemas</p>
     </div>
     <div class="bg-white shadow p-4 rounded-lg text-center">
-      <div class="text-2xl">🟣</div>
-      <p class="text-xl font-bold">12</p>
-      <p class="text-sm text-gray-600">PW Files</p>
+      <div class="text-2xl">📁</div>
+      <p class="text-xl font-bold">24</p>
+      <p class="text-sm text-gray-600">Total Tables</p>
     </div>
     <div class="bg-white shadow p-4 rounded-lg text-center">
-      <div class="text-2xl">🟠</div>
-      <p class="text-xl font-bold">1</p>
-      <p class="text-sm text-gray-600">NG Files</p>
+      <div class="text-2xl">✅</div>
+      <p class="text-xl font-bold">3</p>
+      <p class="text-sm text-gray-600">Active Connections</p>
     </div>
   </div>
 
   <!-- File Distribution & Processing Status -->
   <div class="grid grid-cols-2 gap-6 mb-6">
     <div class="bg-white p-4 rounded-lg shadow">
-      <h2 class="text-sm font-semibold mb-2">File Distribution by Category</h2>
+      <h2 class="text-sm font-semibold mb-2">Schema Distribution by Source</h2>
       <canvas id="fileCategoryChart"></canvas>
     </div>
     <div class="bg-white p-4 rounded-lg shadow">
@@ -45,71 +45,34 @@
     </div>
   </div>
 
-  <!-- Metadata Files -->
-  <div class="bg-white p-4 rounded-lg shadow mb-6">
-    <h2 class="text-md font-semibold mb-4">Metadata Files</h2>
-    <div class="flex space-x-2 mb-2">
-      <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">CO2</button>
-      <button class="px-3 py-1 bg-gray-100 rounded text-sm">PW</button>
-      <button class="px-3 py-1 bg-gray-100 rounded text-sm">NG</button>
-    </div>
-    <h3 class="text-sm font-medium mb-2">CO2 Metadata Schema</h3>
+  <!-- File List -->
+<div class="bg-white p-4 rounded-lg shadow mb-6">
+    <h2 class="text-md font-semibold mb-4">Schemas and Tables</h2>
     <div class="overflow-auto">
       <table class="table-auto w-full text-sm border border-gray-200">
         <thead class="bg-gray-100">
           <tr>
-            <th class="px-2 py-1 border">Field Name</th>
-            <th class="px-2 py-1 border">Definition</th>
-            <th class="px-2 py-1 border">ETRM Context</th>
-            <th class="px-2 py-1 border">Type</th>
+            <th class="px-2 py-1 border">Data Source</th>
+            <th class="px-2 py-1 border">Schema Name</th>
+            <th class="px-2 py-1 border">Tables</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="border px-2 py-1">REPORT DATE</td>
-            <td class="border px-2 py-1">As-of date of the report generation</td>
-            <td class="border px-2 py-1">Date extracted from ETRM</td>
-            <td class="border px-2 py-1">Date</td>
+            <td class="border px-2 py-1">Snowflake</td>
+            <td class="border px-2 py-1">energy_reports</td>
+            <td class="border px-2 py-1">co2_data, pw_data, ng_data</td>
           </tr>
           <tr>
-            <td class="border px-2 py-1">BOOK</td>
-            <td class="border px-2 py-1">Trading book identifier</td>
-            <td class="border px-2 py-1">Book in trading hierarchy</td>
-            <td class="border px-2 py-1">String</td>
+            <td class="border px-2 py-1">Azure SQL</td>
+            <td class="border px-2 py-1">production_metrics</td>
+            <td class="border px-2 py-1">generation, forecast</td>
           </tr>
-          <!-- Add more rows as needed -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- File List -->
-  <div class="bg-white p-4 rounded-lg shadow mb-6">
-    <h2 class="text-md font-semibold mb-4">File Details by Category</h2>
-    <div class="flex space-x-2 mb-2">
-      <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm">All</button>
-      <button class="px-3 py-1 bg-gray-100 rounded text-sm">PW</button>
-      <button class="px-3 py-1 bg-gray-100 rounded text-sm">NG</button>
-      <button class="px-3 py-1 bg-gray-100 rounded text-sm">CO2</button>
-    </div>
-    <div class="overflow-auto">
-      <table class="min-w-full text-sm border border-gray-200">
-        <thead class="bg-gray-100">
           <tr>
-            <th class="border px-2 py-1">File Name</th>
-            <th class="border px-2 py-1">Report Date</th>
-            <th class="border px-2 py-1">Date Uploaded</th>
-            <th class="border px-2 py-1">Processed</th>
+            <td class="border px-2 py-1">CSV</td>
+            <td class="border px-2 py-1">analytics</td>
+            <td class="border px-2 py-1">daily_summary, agents</td>
           </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="border px-2 py-1">NOP_PW_20250124.csv</td>
-            <td class="border px-2 py-1">2025-01-24</td>
-            <td class="border px-2 py-1">2025-05-05</td>
-            <td class="border px-2 py-1 text-green-600">✔️ Yes</td>
-          </tr>
-          <!-- Add more file rows as needed -->
         </tbody>
       </table>
     </div>
@@ -134,9 +97,9 @@
   new Chart(document.getElementById('fileCategoryChart'), {
     type: 'doughnut',
     data: {
-      labels: ['PW', 'NG', 'CO2'],
+      labels: ['Snowflake', 'Azure SQL', 'CSV'],
       datasets: [{
-        data: [12, 1, 1],
+        data: [1, 1, 1],
         backgroundColor: ['#9333ea', '#f59e0b', '#10b981']
       }]
     },

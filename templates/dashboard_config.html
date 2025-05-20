@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Configure Dashboard{% endblock %}
+
+{% block content %}
+<div class="ml-64 p-6 min-h-screen">
+  <h1 class="text-2xl font-bold mb-6">📊 Configure Dashboard Visualizations</h1>
+
+  <!-- Config Blocks Container -->
+  <div id="config-container" class="space-y-6">
+    
+    <!-- Existing Chart Config Blocks -->
+    {% for config in saved_configs %}
+    <div class="bg-white shadow p-6 rounded-lg config-block" data-config-id="{{ config.id }}">
+      <h2 class="text-lg font-semibold mb-4">Chart Configuration</h2>
+      <input type="hidden" name="config_id" value="{{ config.id }}">
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Chart Title</label>
+          <input type="text" name="chart_title" class="w-full border p-2 rounded" value="{{ config.chart_title }}">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Chart Type</label>
+          <select name="chart_type" class="w-full border p-2 rounded">
+            {% for t in ['bar', 'pie', 'line', 'doughnut'] %}
+              <option value="{{ t }}" {% if config.chart_type == t %}selected{% endif %}>{{ t | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Metric</label>
+          <select name="metric" class="w-full border p-2 rounded">
+            {% for m in ['count', 'sum', 'avg', 'min', 'max', 'top'] %}
+              <option value="{{ m }}" {% if config.metric == m %}selected{% endif %}>{{ m | capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Group By</label>
+          <select name="group_by" class="w-full border p-2 rounded">
+            {% for col in columns %}
+              <option value="{{ col }}" {% if config.group_by == col %}selected{% endif %}>{{ col }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <label class="block text-sm font-medium mb-1">Optional GPT Prompt</label>
+        <textarea name="prompt_text" rows="2" class="w-full border p-2 rounded">{{ config.prompt_text }}</textarea>
+      </div>
+
+      <div class="mt-4 flex justify-between items-center">
+        <button class="remove-btn text-red-600 hover:underline">🗑️ Remove</button>
+        <button class="save-block-btn bg-blue-600 text-white px-4 py-1 rounded text-sm hover:bg-blue-700">💾 Save</button>
+      </div>
+      <div class="text-green-600 text-sm mt-2 save-success hidden">✅ Configuration saved successfully!</div>
+    </div>
+    {% endfor %}
+
+    <!-- Hidden Template Block for New Configs -->
+    <div class="bg-white shadow p-6 rounded-lg config-block" id="template-block" style="display: none;">
+      <h2 class="text-lg font-semibold mb-4">Chart Configuration</h2>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Chart Title</label>
+          <input type="text" name="chart_title" class="w-full border p-2 rounded">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Chart Type</label>
+          <select name="chart_type" class="w-full border p-2 rounded">
+            <option value="bar">Bar</option>
+            <option value="pie">Pie</option>
+            <option value="line">Line</option>
+            <option value="doughnut">Doughnut</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Metric</label>
+          <select name="metric" class="w-full border p-2 rounded">
+            <option value="count">Count</option>
+            <option value="sum">Sum</option>
+            <option value="avg">Average</option>
+            <option value="min">Minimum</option>
+            <option value="max">Maximum</option>
+            <option value="top">Top N</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Group By</label>
+          <select name="group_by" class="w-full border p-2 rounded">
+            {% for col in columns %}
+              <option value="{{ col }}">{{ col }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <label class="block text-sm font-medium mb-1">Optional GPT Prompt</label>
+        <textarea name="prompt_text" rows="2" class="w-full border p-2 rounded"></textarea>
+      </div>
+
+      <div class="mt-4 flex justify-between items-center">
+        <button class="remove-btn text-red-600 hover:underline">🗑️ Remove</button>
+        <button class="save-block-btn bg-blue-600 text-white px-4 py-1 rounded text-sm hover:bg-blue-700">💾 Save</button>
+      </div>
+      <div class="text-green-600 text-sm mt-2 save-success hidden">✅ Configuration saved successfully!</div>
+    </div>
+  </div>
+
+  <!-- Add Chart Config Button -->
+  <div class="my-6 text-center">
+    <button id="add-config" class="bg-gray-200 text-sm px-4 py-2 rounded hover:bg-gray-300">➕ Add Another Chart</button>
+  </div>
+</div>
+
+<!-- JS for dynamic config handling -->
+<script>
+  const configContainer = document.getElementById("config-container");
+  const addBtn = document.getElementById("add-config");
+  const templateBlock = document.getElementById("template-block");
+
+  // ➕ Add new blank chart block from hidden template
+  addBtn.addEventListener("click", () => {
+    const clone = templateBlock.cloneNode(true);
+    clone.style.display = "";
+    clone.removeAttribute("id");
+    configContainer.appendChild(clone);
+  });
+
+  // 🗑️ Remove chart block (and delete from DB if saved)
+  configContainer.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("remove-btn")) {
+      const block = e.target.closest(".config-block");
+      const configId = block.dataset.configId;
+      if (configId) {
+        await fetch(`/dashboard/delete-config/${configId}`, {
+          method: "POST"
+        });
+      }
+      block.remove();
+    }
+  });
+
+  // 💾 Individual Save Button for Each Block
+  configContainer.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("save-block-btn")) {
+      const block = e.target.closest(".config-block");
+      const config = {
+        config_id: block.querySelector("[name=config_id]")?.value || null,
+        chart_title: block.querySelector("[name=chart_title]").value,
+        chart_type: block.querySelector("[name=chart_type]").value,
+        metric: block.querySelector("[name=metric]").value,
+        group_by: block.querySelector("[name=group_by]").value,
+        prompt_text: block.querySelector("[name=prompt_text]").value
+      };
+
+      const res = await fetch("/dashboard/save-one-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(config)
+      });
+
+      if (res.ok) {
+        const resData = await res.json();
+
+        // 🆔 Update config_id on block if newly inserted
+        if (resData.config_id) {
+          block.dataset.configId = resData.config_id;
+          const hiddenInput = block.querySelector("[name=config_id]");
+          if (!hiddenInput) {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = "config_id";
+            input.value = resData.config_id;
+            block.appendChild(input);
+          } else {
+            hiddenInput.value = resData.config_id;
+          }
+        }
+
+        // ✅ Show success message
+        const successMsg = block.querySelector(".save-success");
+        successMsg.classList.remove("hidden");
+        setTimeout(() => successMsg.classList.add("hidden"), 3000);
+      }
+    }
+  });
+</script>
+{% endblock %}

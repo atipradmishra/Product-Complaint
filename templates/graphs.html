@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Graph Visualizations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .graph-container {
+            margin-bottom: 3rem;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+        a.button {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        a.button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Graph Visualizations</h1>
+
+    <div class="graph-container">
+        <h2>Total Volume_BL</h2>
+        <img src="data:image/png;base64,{{ graphs['volume_bl_total'] }}" alt="Total Volume_BL">
+    </div>
+
+    <div class="graph-container">
+        <h2>Volume_BL vs Market_Value</h2>
+        <img src="data:image/png;base64,{{ graphs['volume_vs_market'] }}" alt="Volume_BL vs Market_Value">
+    </div>
+
+    <a href="{{ url_for('co2_query_agent.co2_agent_home') }}" class="button">⬅ Back to Home</a>
+</body>
+</html>
