@@ -1,7 +1,7 @@
 import json
 import sqlite3
 import hashlib
-
+import bcrypt 
 import pandas as pd
 from config import BUCKET_NAME,DB_NAME
 
@@ -69,6 +69,14 @@ def create_users_table():
             user_query TEXT,
             generated_sql TEXT,
             result_value REAL
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS daily_ai_summary (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            agent_id INTEGER,
+            summary TEXT NOT NULL,
+            date TIMESTAMP
         )
     """)
     conn.commit()
@@ -295,7 +303,7 @@ def migrate_default_prompt_to_agent(rag_agent_id: int):
 # Returns a dictionary containing system prompt, task, and instruction for each.
 # Used globally in the application to apply admin-defined prompt logic.
 
-def load_admin_prompts(rag_agent_id=None):
+def load_admin_prompts(rag_agent_id):
     with sqlite3.connect(DB_NAME) as conn:
         print(f"I am in load_admin_prompts+{rag_agent_id}")
         #rag_agent_id = 3
@@ -498,3 +506,31 @@ def fetch_query_logs(limit=300):
             "value": row[3]
         }
         for row in rows]
+
+
+# In db_manager.py (replace the register_user and authenticate_user functions)
+
+
+def register_user(username, password):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+    try:
+        c.execute("INSERT INTO users (username, password) VALUES (?, ?)", 
+                 (username, hashed_password))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        conn.close()
+
+def authenticate_user(username, password):
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
+    c.execute("SELECT password FROM users WHERE username = ?", (username,))
+    result = c.fetchone()
+    conn.close()
+    if result:
+        return bcrypt.checkpw(password.encode('utf-8'), result[0])
+    return False

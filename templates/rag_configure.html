@@ -1,43 +1,161 @@
 {% extends 'base.html' %} 
 {% block title %}RAG Configure{% endblock %} 
 {% block content %}
-    <div class="ml-64 p-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold">Configure RAG Agents</h1>
-            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700" onclick="document.location.href='/rag-agents/add';">
-              + Add New Agent
-            </button>
+<div class="ml-64 p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Configure RAG Agents</h1>
+    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700" onclick="document.location.href='/rag-agents/add';">
+      + Add New Agent
+    </button>
+  </div>
+
+  <div class="bg-white p-4 rounded-lg shadow">
+    <table class="min-w-full text-sm text-left text-gray-600">
+      <thead class="text-xs text-gray-500 uppercase bg-gray-100">
+        <tr>
+          <th scope="col" class="px-4 py-3">Agent Name</th>
+          <th scope="col" class="px-4 py-3">Server</th>
+          <th scope="col" class="px-4 py-3">Status</th>
+          <th scope="col" class="px-4 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for agent in agents %}
+        <tr class="border-b">
+          <td class="px-4 py-3">{{ agent.name }}</td>
+          <td class="px-4 py-3">{{ agent.source }}</td>
+          <td class="px-4 py-3 text-green-600 font-semibold">Active</td>
+          <td class="px-4 py-3">
+            <button onclick="openEditModal({{ agent.id }})" class="text-blue-600 hover:underline">Edit</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Enhanced Edit Modal -->
+<div id="editModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl p-6 relative overflow-y-auto max-h-screen">
+    <button onclick="closeEditModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-xl font-bold">&times;</button>
+    <h2 class="text-xl font-semibold mb-4">Edit RAG Agent</h2>
+    <form id="editAgentForm" method="POST">
+      <input type="hidden" name="id" id="edit_id">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-medium">Agent Name</label>
+          <input type="text" name="agent_name" id="edit_agent_name" class="w-full border px-3 py-2 rounded-md" required>
+        </div>
+        <div>
+          <label class="block font-medium">Source</label>
+          <input type="text" name="source" id="edit_source" class="w-full border px-3 py-2 rounded-md" required oninput="toggleFields(this.value)">
+        </div>
+        <div>
+          <label class="block font-medium">User ID</label>
+          <input type="text" name="uid" id="edit_uid" class="w-full border px-3 py-2 rounded-md">
+        </div>
+        <div>
+          <label class="block font-medium">Password</label>
+          <input type="password" name="pwd" id="edit_pwd" class="w-full border px-3 py-2 rounded-md">
+        </div>
+
+        <!-- SQL Fields (hidden for Snowflake) -->
+        <div class="sql-only">
+          <label class="block font-medium">Server</label>
+          <input type="text" name="server" id="edit_server" class="w-full border px-3 py-2 rounded-md">
+        </div>
+        <div class="sql-only">
+          <label class="block font-medium">SQL Database</label>
+          <input type="text" name="sql_database" id="edit_sql_database" class="w-full border px-3 py-2 rounded-md">
+        </div>
+        <div class="sql-only">
+          <label class="block font-medium">Port</label>
+          <input type="text" name="port" id="edit_port" class="w-full border px-3 py-2 rounded-md">
+        </div>
+        <div class="sql-only">
+          <label class="block font-medium">Driver</label>
+          <input type="text" name="driver" id="edit_driver" class="w-full border px-3 py-2 rounded-md">
+        </div>
+
+        <!-- Common Field -->
+        <div>
+          <label class="block font-medium">Schema</label>
+          <input type="text" name="schema" id="edit_schema" class="w-full border px-3 py-2 rounded-md">
+        </div>
+
+        <!-- Snowflake Only -->
+        <div id="sf_fields" class="hidden col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-medium">Snowflake Account</label>
+            <input type="text" name="account" id="edit_account" class="w-full border px-3 py-2 rounded-md">
           </div>
-      
-          <div class="bg-white p-4 rounded-lg shadow">
-            <table class="min-w-full text-sm text-left text-gray-600">
-              <thead class="text-xs text-gray-500 uppercase bg-gray-100">
-                <tr>
-                  <th scope="col" class="px-4 py-3">Agent Name</th>
-                  <th scope="col" class="px-4 py-3">Source</th>
-                  <th scope="col" class="px-4 py-3">Status</th>
-                  <th scope="col" class="px-4 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="border-b">
-                  <td class="px-4 py-3">Market Insights Agent</td>
-                  <td class="px-4 py-3">/data/market.json</td>
-                  <td class="px-4 py-3 text-green-600 font-semibold">Active</td>
-                  <td class="px-4 py-3">
-                    <button class="text-blue-600 hover:underline">Edit</button>
-                  </td>
-                </tr>
-                <tr class="border-b">
-                  <td class="px-4 py-3">Risk Monitor Bot</td>
-                  <td class="px-4 py-3">S3://analytics/risk</td>
-                  <td class="px-4 py-3 text-yellow-600 font-semibold">Pending</td>
-                  <td class="px-4 py-3">
-                    <button class="text-blue-600 hover:underline">Edit</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div>
+            <label class="block font-medium">Warehouse</label>
+            <input type="text" name="warehouse" id="edit_warehouse" class="w-full border px-3 py-2 rounded-md">
           </div>
-    </div>
+        </div>
+      </div>
+
+      <div class="text-right mt-4">
+        <button type="button" onclick="submitEditForm()" class="bg-blue-600 text-white px-6 py-2 rounded-md">Save Changes</button>
+        <button type="button" onclick="closeEditModal()" class="ml-2 text-red-600">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function toggleFields(source) {
+    const isSnowflake = source.toLowerCase() === "snowflake";
+    document.getElementById("sf_fields").classList.toggle("hidden", !isSnowflake);
+
+    // Toggle all SQL-only fields
+    document.querySelectorAll('.sql-only').forEach(el => {
+      el.classList.toggle("hidden", isSnowflake);
+    });
+  }
+
+  function openEditModal(id) {
+    fetch(`/get-connection/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById("edit_id").value = data.id;
+        document.getElementById("edit_agent_name").value = data.agent_name;
+        document.getElementById("edit_source").value = data.source;
+        document.getElementById("edit_uid").value = data.uid || "";
+        document.getElementById("edit_pwd").value = "";
+        document.getElementById("edit_server").value = data.server || "";
+        document.getElementById("edit_sql_database").value = data.sql_database || "";
+        document.getElementById("edit_port").value = data.port || "";
+        document.getElementById("edit_driver").value = data.driver || "";
+        document.getElementById("edit_schema").value = data.schema || "";
+        document.getElementById("edit_account").value = data.account || "";
+        document.getElementById("edit_warehouse").value = data.warehouse || "";
+
+        toggleFields(data.source);
+        document.getElementById("editModal").classList.remove("hidden");
+      });
+  }
+
+  function closeEditModal() {
+    document.getElementById("editModal").classList.add("hidden");
+  }
+
+  function submitEditForm() {
+    const formData = new FormData(document.getElementById("editAgentForm"));
+    fetch("/update-connection", {
+      method: "POST",
+      body: formData
+    })
+    .then(res => res.json())
+    .then(response => {
+      alert(response.message);
+      if (response.status === "success") {
+        location.reload();
+      }
+    });
+  }
+</script>
 {% endblock %}

@@ -17,13 +17,34 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 import pyodbc
 import snowflake.connector
-
-
+from auth_routes import auth_bp
+from graphqueryagent.querygraph_copilot import graph_query_bp
 
 app = Flask(__name__)
+app.register_blueprint(graph_query_bp)
+app.register_blueprint(auth_bp, url_prefix='/auth')
 app.secret_key = "dev_secret_key_here"
 
+@app.before_request
+def require_login():
+    if request.endpoint and (
+        request.endpoint.startswith("auth.")
+        or request.endpoint.startswith("static")
+        or request.endpoint in {"home"}
+    ):
+        return  # allow login, register, static, and home
+
+    if "username" not in session:
+        return redirect(url_for("auth.login"))
+    
 @app.route("/")
+def home():
+    # Redirect logged-in users to dashboard, others to login
+    if 'username' in session:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('auth.login'))  # <-- Fix redirect target
+
+@app.route("/dashboard")
 def dashboard():
     chart_configs = get_all_chart_configs()
     chart_data = []
@@ -119,30 +140,50 @@ def dashboard():
 
     print("✅ Final agent_id being used:", rag_agent_id)
 
-
-    admin_prompts = load_admin_prompts(rag_agent_id=rag_agent_id)
-    summary_prompt = admin_prompts.get("dashboard_summary_prompt", "") if admin_prompts else ""
-
     summary_text = ""
-    if summary_prompt:
-        try:
-            summary_payload = {
-                "charts": chart_data,
-                "prompt": summary_prompt
-            }
-            summary_text = generate_rag_response(summary_payload)
-            
-            summary_payload = {
-                "charts": chart_data,
-                "prompt": summary_prompt
-            }
-            #summary_text = generate_rag_response(summary_payload, user_question="Dashboard summary")
-            summary_text = generate_rag_response(summary_payload)
+    conn = sqlite3.connect(DB_NAME)
+    c = conn.cursor()
 
+    today = datetime.today().strftime('%Y-%m-%d')
 
+    c.execute("SELECT summary FROM daily_ai_summary WHERE date = ? AND agent_id = ?", (today,rag_agent_id,))
+    result = c.fetchone()
 
-        except Exception as e:
-            print("❌ Summary generation failed:", e)
+    if result:
+        summary_text = result[0]
+    else:
+        # summary = generate_ai_summary(rag_agent_id)
+        admin_prompts = load_admin_prompts(rag_agent_id)
+        summary_prompt = admin_prompts.get("dashboard_summary_prompt", "") if admin_prompts else ""
+
+        if summary_prompt:
+                summary_payload = {
+                    "charts": chart_data,
+                    "prompt": summary_prompt
+                }
+                summary = generate_rag_response(summary_payload)
+                summary_text = summary
+                c.execute("INSERT INTO daily_ai_summary (summary, agent_id, date) VALUES (?, ?,?)", (summary, rag_agent_id, today))
+                conn.commit()
+        else:
+            summary = ""
+
+    # def generate_ai_summary(agent_id):
+    #     admin_prompts = load_admin_prompts(agent_id)
+    #     summary_prompt = admin_prompts.get("dashboard_summary_prompt", "") if admin_prompts else ""
+
+    #     if summary_prompt:
+    #         try:
+    #             summary_payload = {
+    #                 "charts": chart_data,
+    #                 "prompt": summary_prompt
+    #             }
+    #             summary = generate_rag_response(summary_payload)
+                
+    #             return summary
+    #         except Exception as e:
+    #             print(f"⚠️ Failed to generate AI summary: {e}")
+    #             return ""
 
     return render_template(
         "dashboard.html",
@@ -173,7 +214,23 @@ def inject_now():
     
 @app.route("/rag-configure")
 def rag_configure():
-    return render_template("rag_configure.html")
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, agent_name, source 
+        FROM connections
+        ORDER BY agent_name
+    """)
+    rows = cursor.fetchall()
+    conn.close()
+
+    agents = [
+        {"id": row[0], "name": row[1], "source": row[2]}
+        for row in rows
+    ]
+
+    return render_template("rag_configure.html", agents=agents)
+
 
 @app.route("/rag-dashboard")
 def rag_dashboard():
@@ -231,6 +288,28 @@ def get_connections():
     agents = cursor.fetchall()
     conn.close()
     return jsonify([{"id": row[0], "name": row[1]} for row in agents])
+
+
+@app.route("/get-connection/<int:agent_id>", methods=["GET"])
+def get_connection(agent_id):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM connections WHERE id = ?", (agent_id,))
+    row = cursor.fetchone()
+    column_names = [desc[0] for desc in cursor.description]
+    conn.close()
+
+    if not row:
+        return jsonify({"error": "Agent not found"}), 404
+
+    result = dict(zip(column_names, row))
+    if result.get("pwd"):
+        try:
+            result["pwd"] = fernet.decrypt(result["pwd"].encode()).decode()
+        except:
+            result["pwd"] = ""
+
+    return jsonify(result)
 
 
 @app.route("/connect-agent", methods=["POST"])
@@ -719,10 +798,9 @@ def save_summary_prompt():
         conn.commit()
     return jsonify({"status": "success"})
 
-@app.route("/graph-query")
-def qgraph_query():
-    #logs = fetch_query_logs(limit=300)
-    return render_template("work_in_progress.html")
+#@app.route("/graph-query")
+#def graph_query():
+#    return render_template("graph_query.html")
 
 @app.route("/deviation-analysis")
 def deviation_analysis():
@@ -758,6 +836,33 @@ def settings():
 def processed_data():
     #logs = fetch_query_logs(limit=300)
     return render_template("work_in_progress.html")
+
+@app.route("/update-connection", methods=["POST"])
+def update_connection():
+    try:
+        data = request.form
+        agent_id = data.get("id")
+
+        encrypted_pwd = fernet.encrypt(data.get("pwd", "").encode()).decode()
+
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE connections
+            SET agent_name=?, source=?, uid=?, pwd=?, server=?, sql_database=?, port=?, driver=?, schema=?, 
+                account=?, sf_database=?, warehouse=?
+            WHERE id = ?
+        """, (
+            data.get("agent_name"), data.get("source"), data.get("uid"), encrypted_pwd,
+            data.get("server"), data.get("sql_database"), data.get("port"), data.get("driver"),
+            data.get("schema"), data.get("account"), data.get("sql_database"), data.get("warehouse"),
+            agent_id
+        ))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "message": "Agent updated successfully."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
 
 
 if __name__ == "__main__":
