@@ -12,7 +12,7 @@ def create_users_table():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
+            username TEXT UNIQUE NOT NULL COLLATE NOCASE,
             password BLOB NOT NULL,
             role TEXT DEFAULT 'user'
         )
@@ -77,6 +77,15 @@ def create_users_table():
             agent_id INTEGER,
             summary TEXT NOT NULL,
             date TIMESTAMP
+        
+        )
+    """)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS dashboard_insights (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            agent_id INTEGER,
+            insights TEXT NOT NULL,
+            date TEXT
         )
     """)
     conn.commit()
@@ -122,25 +131,24 @@ def init_admin_prompts():
                 synthesizer_system_prompt TEXT,
                 synthesizer_task TEXT,
                 synthesizer_instruction TEXT,
-                dashboard_summary_prompt TEXT
-                -- note: rag_agent_id not included here to avoid redefinition if it already exists
+                dashboard_summary_prompt TEXT,
+                dashboard_notifications_prompt TEXT,   
+                rag_agent_id INTEGER
             );
         """)
 
-        # Add rag_agent_id column if it doesn't exist
+        # Add rag_agent_id and dashboard_notifications_prompt column if it doesn't exist
         cursor = conn.execute("PRAGMA table_info(admin_prompts)")
         columns = [row[1] for row in cursor.fetchall()]
         if "rag_agent_id" not in columns:
             conn.execute("ALTER TABLE admin_prompts ADD COLUMN rag_agent_id INTEGER")
-
-
+        if "dashboard_notifications_prompt" not in columns:
+            conn.execute("ALTER TABLE admin_prompts ADD COLUMN dashboard_notifications_prompt INTEGER")
 
 #Save prompt data from UI
 #This function is called when the "Save All Prompts" button is clicked:
-
 def save_admin_prompts(prompt_data):
     rag_agent_id = prompt_data.get("rag_agent_id")
-
     try:
         rag_agent_id = int(rag_agent_id)
     except (TypeError, ValueError):
@@ -150,7 +158,6 @@ def save_admin_prompts(prompt_data):
 
     with sqlite3.connect(DB_NAME) as conn:
         if is_default:
-            # Update the default row (id = 1)
             conn.execute("""
                 UPDATE admin_prompts SET
                     sql_system_prompt = ?,
@@ -159,7 +166,8 @@ def save_admin_prompts(prompt_data):
                     synthesizer_system_prompt = ?,
                     synthesizer_task = ?,
                     synthesizer_instruction = ?,
-                    dashboard_summary_prompt = ?
+                    dashboard_summary_prompt = ?,
+                    dashboard_notifications_prompt = ?
                 WHERE id = 1
             """, (
                 prompt_data["sql_system_prompt"],
@@ -168,13 +176,12 @@ def save_admin_prompts(prompt_data):
                 prompt_data["synthesizer_system_prompt"],
                 prompt_data["synthesizer_task"],
                 prompt_data["synthesizer_instruction"],
-                prompt_data["dashboard_summary_prompt"]
+                prompt_data["dashboard_summary_prompt"],
+                prompt_data["dashboard_notifications_prompt"]
             ))
         else:
-            # Update or insert by rag_agent_id
             cur = conn.execute("SELECT id FROM admin_prompts WHERE rag_agent_id = ?", (rag_agent_id,))
             row = cur.fetchone()
-
             if row:
                 conn.execute("""
                     UPDATE admin_prompts SET
@@ -184,7 +191,8 @@ def save_admin_prompts(prompt_data):
                         synthesizer_system_prompt = ?,
                         synthesizer_task = ?,
                         synthesizer_instruction = ?,
-                        dashboard_summary_prompt = ?
+                        dashboard_summary_prompt = ?,
+                        dashboard_notifications_prompt = ?
                     WHERE rag_agent_id = ?
                 """, (
                     prompt_data["sql_system_prompt"],
@@ -194,15 +202,16 @@ def save_admin_prompts(prompt_data):
                     prompt_data["synthesizer_task"],
                     prompt_data["synthesizer_instruction"],
                     prompt_data["dashboard_summary_prompt"],
+                    prompt_data["dashboard_notifications_prompt"],
                     rag_agent_id
                 ))
             else:
                 conn.execute("""
                     INSERT INTO admin_prompts (
                         sql_system_prompt, sql_task, sql_instruction,
-                        synthesizer_system_prompt, synthesizer_task, synthesizer_instruction, dashboard_summary_prompt,
-                        rag_agent_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        synthesizer_system_prompt, synthesizer_task, synthesizer_instruction,
+                        dashboard_summary_prompt, dashboard_notifications_prompt, rag_agent_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     prompt_data["sql_system_prompt"],
                     prompt_data["sql_task"],
@@ -211,11 +220,10 @@ def save_admin_prompts(prompt_data):
                     prompt_data["synthesizer_task"],
                     prompt_data["synthesizer_instruction"],
                     prompt_data["dashboard_summary_prompt"],
+                    prompt_data["dashboard_notifications_prompt"],
                     rag_agent_id
                 ))
 
-
-def save_admin_prompts_BKP(prompt_data):
     rag_agent_id = prompt_data.get("rag_agent_id")
     with sqlite3.connect(DB_NAME) as conn:
         # Check if record already exists
@@ -264,70 +272,59 @@ def save_admin_prompts_BKP(prompt_data):
             ))
 
 
+# Migrate default prompt to a specific agent
 def migrate_default_prompt_to_agent(rag_agent_id: int):
     with sqlite3.connect(DB_NAME) as conn:
-        # Get the default (id=1) prompt
         cur = conn.execute("""
             SELECT sql_system_prompt, sql_task, sql_instruction,
-                   synthesizer_system_prompt, synthesizer_task, synthesizer_instruction,dashboard_summary_prompt
+                   synthesizer_system_prompt, synthesizer_task, synthesizer_instruction,
+                   dashboard_summary_prompt, dashboard_notifications_prompt
             FROM admin_prompts WHERE id = 1
         """)
         row = cur.fetchone()
-
         if not row:
             print("⚠️ No default prompt found to migrate.")
             return False
 
-        # Check if this agent already has a prompt
         cur = conn.execute("SELECT 1 FROM admin_prompts WHERE rag_agent_id = ?", (rag_agent_id,))
         if cur.fetchone():
             print(f"⚠️ Agent {rag_agent_id} already has a prompt. Migration skipped.")
             return False
 
-        # Insert a new row for the agent
         conn.execute("""
             INSERT INTO admin_prompts (
                 sql_system_prompt, sql_task, sql_instruction,
                 synthesizer_system_prompt, synthesizer_task, synthesizer_instruction,
-                dashboard_summary_prompt,rag_agent_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?,?)
+                dashboard_summary_prompt, dashboard_notifications_prompt, rag_agent_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (*row, rag_agent_id))
 
         print(f"✅ Default prompt migrated to agent_id {rag_agent_id}.")
         return True
 
 
-
-
 # Loads the latest saved prompts for both the SQL Query Generator and Query Synthesizer.
 # Returns a dictionary containing system prompt, task, and instruction for each.
 # Used globally in the application to apply admin-defined prompt logic.
-
 def load_admin_prompts(rag_agent_id):
     with sqlite3.connect(DB_NAME) as conn:
-        print(f"I am in load_admin_prompts+{rag_agent_id}")
-        #rag_agent_id = 3
         if rag_agent_id:
             cur = conn.execute("""
-                SELECT
-                    sql_system_prompt, sql_task, sql_instruction,
-                    synthesizer_system_prompt, synthesizer_task, synthesizer_instruction,
-                    dashboard_summary_prompt,rag_agent_id
+                SELECT sql_system_prompt, sql_task, sql_instruction,
+                       synthesizer_system_prompt, synthesizer_task, synthesizer_instruction,
+                       dashboard_summary_prompt, dashboard_notifications_prompt, rag_agent_id
                 FROM admin_prompts
                 WHERE rag_agent_id = ?
                 LIMIT 1
             """, (rag_agent_id,))
         else:
             cur = conn.execute("""
-                SELECT
-                    sql_system_prompt, sql_task, sql_instruction,
-                    synthesizer_system_prompt, synthesizer_task, synthesizer_instruction,
-                    dashboard_summary_prompt,rag_agent_id
+                SELECT sql_system_prompt, sql_task, sql_instruction,
+                       synthesizer_system_prompt, synthesizer_task, synthesizer_instruction,
+                       dashboard_summary_prompt, dashboard_notifications_prompt, rag_agent_id
                 FROM admin_prompts
                 WHERE id = 1
             """)
-            print (f"Checking Now:+{cur}")
-
         row = cur.fetchone()
         if row:
             return {
@@ -338,10 +335,10 @@ def load_admin_prompts(rag_agent_id):
                 "synthesizer_task": row[4],
                 "synthesizer_instruction": row[5],
                 "dashboard_summary_prompt": row[6],
-                "rag_agent_id": row[7]
+                "dashboard_notifications_prompt": row[7],
+                "rag_agent_id": row[8]
             }
         return None
-
 
 
 # Creates a table to store chat history between the user and RAG agent, including queries, SQL, results, responses, and optional feedback.    
@@ -438,7 +435,7 @@ def get_all_chart_configs():
             ORDER BY created_at ASC
         """)
         rows = cur.fetchall()
-        print("🧪 Chart Configs Fetched:", [dict(row) for row in rows])
+        # print("🧪 Chart Configs Fetched:", [dict(row) for row in rows])
         return [dict(row) for row in rows]
 
         # return [dict(row) for row in cur.fetchall()]
@@ -507,6 +504,15 @@ def fetch_query_logs(limit=300):
         }
         for row in rows]
 
+def get_latest_query_result():
+    logs = fetch_query_logs(limit=1)
+    if logs:
+        try:
+            return json.loads(logs[0]["value"])  # value holds the result as JSON string
+        except Exception:
+            return {"columns": [], "rows": []}
+    return {"columns": [], "rows": []}
+
 
 # In db_manager.py (replace the register_user and authenticate_user functions)
 
@@ -534,3 +540,27 @@ def authenticate_user(username, password):
     if result:
         return bcrypt.checkpw(password.encode('utf-8'), result[0])
     return False
+
+def create_notifications_table():
+    with sqlite3.connect(DB_NAME) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS daily_ai_notifications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                agent_id INTEGER,
+                notifications TEXT NOT NULL,
+                date TIMESTAMP
+            )
+        """)
+
+# notif
+def create_dashboard_insights_table():
+    with sqlite3.connect(DB_NAME) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS dashboard_insights (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                agent_id INTEGER,
+                insights TEXT NOT NULL,
+                date TEXT
+            )
+        """)
+

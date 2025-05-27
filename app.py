@@ -1,9 +1,10 @@
 from flask import Flask, render_template, jsonify, request, flash, redirect, session, url_for
+from dashboard.dashboard_metrics import get_kpi_cards
 from gpt_client import create_invoke_chain, llm
 from chatagent.sql_copilot import get_sql_from_question
-from chatagent.rag_synthesizer import generate_rag_response
+from chatagent.rag_synthesizer import generate_rag_response, generate_why_response
 from sql_query_executor import run_sql_with_connection, run_sql
-from db_manager import create_chart_config_table, create_chat_logs_table, create_users_table, delete_chart_config_by_id, fetch_query_logs, get_all_chart_configs, get_metadata_column_names, get_recent_chat_history, register_user, authenticate_user, init_admin_prompts, save_admin_prompts, load_admin_prompts, log_chat_interaction, save_chart_config_to_db, save_or_update_chart_config,save_query_log_to_db
+from db_manager import create_chart_config_table, create_chat_logs_table, create_users_table, delete_chart_config_by_id, fetch_query_logs, get_all_chart_configs, get_latest_query_result, get_metadata_column_names, get_recent_chat_history, register_user, authenticate_user, init_admin_prompts, save_admin_prompts, load_admin_prompts, log_chat_interaction, save_chart_config_to_db, save_or_update_chart_config,save_query_log_to_db
 from dataagent.s3_database_upload import upload_s3_database_update
 import json
 import os
@@ -19,8 +20,12 @@ import pyodbc
 import snowflake.connector
 from auth_routes import auth_bp
 from graphqueryagent.querygraph_copilot import graph_query_bp
+from insights_generator import get_dashboard_insights
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+
 app.register_blueprint(graph_query_bp)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.secret_key = "dev_secret_key_here"
@@ -51,14 +56,14 @@ def dashboard():
 
     for cfg in chart_configs:
         try:
-            print(f"🧠 SQL for '{cfg['chart_title']}':\n{cfg['sql_query']}")
+            # print(f"🧠 SQL for '{cfg['chart_title']}':\n{cfg['sql_query']}")
 
             result = run_sql(cfg["sql_query"])
 
             if not result["rows"]:
                 print(f"⚠️ NO DATA returned for chart: {cfg['chart_title']}")
 
-            print(f"📊 SQL Result for '{cfg['chart_title']}':", result)
+            # print(f"📊 SQL Result for '{cfg['chart_title']}':", result)
 
             # Convert structured rows to list of dicts
             if isinstance(result, dict) and "columns" in result and "rows" in result:
@@ -96,6 +101,7 @@ def dashboard():
             ]
             bg_colors = color_palette * ((len(labels) // len(color_palette)) + 1)
 
+            
             chart_data.append({
                 "chart_type": cfg["chart_type"],
                 "labels": labels,
@@ -110,8 +116,6 @@ def dashboard():
     
     # ✅ Use correct agent ID from session
     #rag_agent_id = session.get("agent_id")
-
-
 
     def get_sqlite_agent_id():
         conn = sqlite3.connect(DB_NAME)
@@ -148,48 +152,45 @@ def dashboard():
 
     c.execute("SELECT summary FROM daily_ai_summary WHERE date = ? AND agent_id = ?", (today,rag_agent_id,))
     result = c.fetchone()
-
     if result:
         summary_text = result[0]
     else:
         # summary = generate_ai_summary(rag_agent_id)
         admin_prompts = load_admin_prompts(rag_agent_id)
         summary_prompt = admin_prompts.get("dashboard_summary_prompt", "") if admin_prompts else ""
-
         if summary_prompt:
+            try:
                 summary_payload = {
                     "charts": chart_data,
                     "prompt": summary_prompt
                 }
                 summary = generate_rag_response(summary_payload)
+                
                 summary_text = summary
-                c.execute("INSERT INTO daily_ai_summary (summary, agent_id, date) VALUES (?, ?,?)", (summary, rag_agent_id, today))
-                conn.commit()
+                # ✅ Only save to DB if it's not an error placeholder
+                if "⚠️ Error" not in summary:
+                    c.execute("INSERT INTO daily_ai_summary (summary, agent_id, date) VALUES (?, ?,?)", (summary, rag_agent_id, today))
+                    conn.commit()
+                else:
+                    print("⛔ Skipping save: summary contains error placeholder.")
+            except Exception as e:
+                print("❌ Error generating summary:", e)
+                summary_text = "⚠️ Error generating summary."
+
         else:
             summary = ""
 
-    # def generate_ai_summary(agent_id):
-    #     admin_prompts = load_admin_prompts(agent_id)
-    #     summary_prompt = admin_prompts.get("dashboard_summary_prompt", "") if admin_prompts else ""
+    notifications, insight_date = get_dashboard_insights(chart_data, rag_agent_id)
 
-    #     if summary_prompt:
-    #         try:
-    #             summary_payload = {
-    #                 "charts": chart_data,
-    #                 "prompt": summary_prompt
-    #             }
-    #             summary = generate_rag_response(summary_payload)
-                
-    #             return summary
-    #         except Exception as e:
-    #             print(f"⚠️ Failed to generate AI summary: {e}")
-    #             return ""
-
+    kpi_cards = get_kpi_cards()
     return render_template(
         "dashboard.html",
         chart_configs=chart_configs,
         chart_data_json=json.dumps(chart_data),
-        ai_summary=summary_text
+        ai_summary=summary_text,
+        notifications=notifications,
+        insight_date=insight_date,
+        kpi_cards=kpi_cards
     )
 
 fernet = Fernet(FERNET_KEY)
@@ -241,6 +242,19 @@ def chat_with_rag():
     prefill = request.args.get("prefill", "")
     chat_history = get_recent_chat_history(limit=10)
     return render_template("chat_window.html", prefill=prefill, chat_history=chat_history)
+
+@app.route("/ask", methods=["POST"])
+def ask():
+    user_question = request.json.get("question", "")
+
+    if user_question.strip().lower().startswith("why"):
+        response = generate_why_response(user_question)
+    else:
+        result = get_latest_query_result()
+        response_text = generate_rag_response(result, user_question)
+        response = {"text": response_text, "chart_html": None}
+
+    return jsonify(response)
 
 @app.route("/admin/prompts", methods=["GET"])
 def admin_prompt_settings_page():
@@ -562,9 +576,9 @@ def add_agent():
 def save_connection():
     try:
         data = request.form
-        # Hash the password (encrypt using bcrypt)
         plain_password = data.get("pwd", "")
         encrypted_pwd = fernet.encrypt(plain_password.encode()).decode()
+
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
 
@@ -575,30 +589,30 @@ def save_connection():
                 source TEXT, uid TEXT, pwd TEXT,
                 server TEXT, sql_database TEXT, port TEXT, driver TEXT,
                 account TEXT, sf_database TEXT, warehouse TEXT, schema TEXT
-    
             )
-
         ''')
 
         cursor.execute('''
-                INSERT INTO connections (
-                    agent_name, source, uid, pwd,
-                    server, sql_database, port, driver,
-                    account, sf_database, warehouse, schema
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                data.get("modal_agent_name"),
-                data.get("source"),
-                data.get("uid"), encrypted_pwd,
-                data.get("server"), data.get("sql_database"), data.get("port"), data.get("driver"),
-                data.get("account"), data.get("sf_database"), data.get("warehouse"), data.get("schema")
-            ))
+            INSERT INTO connections (
+                agent_name, source, uid, pwd,
+                server, sql_database, port, driver,
+                account, sf_database, warehouse, schema
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data.get("modal_agent_name"),
+            data.get("source"),
+            data.get("uid"), encrypted_pwd,
+            data.get("server"), data.get("sql_database"), data.get("port"), data.get("driver"),
+            data.get("account"), data.get("sf_database"), data.get("warehouse"), data.get("schema")
+        ))
 
         conn.commit()
         conn.close()
-        return jsonify({"message": "Connection details saved successfully"})
+        flash("Connection saved successfully!", "success")
+        return redirect(url_for("rag_configure"))  # ✅ Redirect to RAG page
     except Exception as e:
-        return jsonify({"message": f"Error saving connection: {str(e)}"}), 500
+        flash(f"Error saving connection: {str(e)}", "error")
+        return redirect(url_for("add_agent"))
 
 @app.route("/data-management")
 def data_management():
@@ -744,6 +758,7 @@ def dashboard_config():
 def save_one_chart_config():
     config = request.get_json()
     prompt = config.get("prompt_text", "")
+
     try:
         from chatagent.sql_copilot import get_sql_from_question
         result = get_sql_from_question(prompt)
@@ -865,5 +880,68 @@ def update_connection():
         return jsonify({"status": "error", "message": str(e)})
 
 
+def get_dashboard_insights(chart_data, rag_agent_id, force_regenerate=False):
+    """
+    Returns a list of AI-generated dashboard insights (notifications).
+    If `force_regenerate` is False, uses the cached version if it exists.
+    """
+    today = datetime.today().strftime('%Y-%m-%d')
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+
+    if not force_regenerate:
+        cursor.execute("""
+            SELECT insights, date FROM dashboard_insights 
+            WHERE date = ? AND agent_id = ?
+        """, (today, rag_agent_id))
+        cached = cursor.fetchone()
+        if cached:
+            conn.close()
+            return json.loads(cached[0]), cached[1]
+
+    # 🔄 Generate fresh insights
+    admin_prompts = load_admin_prompts(rag_agent_id)
+    notif_prompt = admin_prompts.get("dashboard_notifications_prompt", "") if admin_prompts else ""
+
+    notifications = []
+    if notif_prompt:
+        notif_payload = {
+            "charts": chart_data,
+            "prompt": notif_prompt
+        }
+        try:
+            notif_response = generate_rag_response(notif_payload)
+
+            # Clean and split into bullet points
+            notifications = [line.strip() for line in notif_response.split("\n") if line.strip()]
+
+            # Replace or insert today's insights
+            cursor.execute("""
+                DELETE FROM dashboard_insights WHERE date = ? AND agent_id = ?
+            """, (today, rag_agent_id))
+            cursor.execute("""
+                INSERT INTO dashboard_insights (insights, agent_id, date)
+                VALUES (?, ?, ?)
+            """, (json.dumps(notifications), rag_agent_id, today))
+            conn.commit()
+
+        except Exception as e:
+            print(f"⚠️ Insight generation failed: {e}")
+
+    conn.close()
+    return notifications, today
+
+@app.route("/delete-connection/<int:agent_id>", methods=["POST"])
+def delete_connection(agent_id):
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM connections WHERE id = ?", (agent_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"status": "success", "message": "Agent deleted successfully."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5001)

@@ -9,7 +9,7 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].lower().strip()
         password = request.form['password']
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
@@ -25,7 +25,7 @@ def login():
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].lower().strip()
         password = request.form['password']
         hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         try:

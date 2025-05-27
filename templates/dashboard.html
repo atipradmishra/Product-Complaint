@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}HTO Complaint Report{% endblock %}
+{% block title %}Product Complaint Report{% endblock %}
 
 {% block content %}
 <div class="ml-64 p-6">
@@ -11,16 +11,75 @@
 
   <!-- AI Summary -->
   <div class="bg-white p-4 rounded-lg shadow mb-6">
-  <p><strong>AI Summary:</strong> {{ ai_summary }}</p>
+    <p><strong>AI Summary:</strong> {{ ai_summary }}</p>
   </div>
 
-  <!-- Dynamic Chart Blocks -->
-  {% for chart in chart_configs %}
-  <div class="bg-white p-4 rounded-lg shadow mb-6 h-96">
-    <h2 class="font-bold text-sm mb-2">{{ chart.chart_title }}</h2>
-    <canvas id="chart_{{ loop.index }}" class="w-full h-full"></canvas>
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    {% for card in kpi_cards %}
+      <div class="bg-white p-4 rounded-lg shadow text-center">
+        <h3 class="text-sm font-semibold text-gray-500">{{ card.label }}</h3>
+        <p class="text-2xl font-bold text-gray-800">{{ card.value }}</p>
+      </div>
+    {% endfor %}
   </div>
+
+  <!-- Dynamic Chart Blocks Grouped in Pairs -->
+  <div class="flex flex-wrap gap-4 mb-6 justify-between">
+  {% set non_table_charts = chart_configs | selectattr('chart_type', 'ne', 'table') | list %}
+  {% for i in range(0, non_table_charts|length, 2) %}
+    <div class="flex w-full gap-4 mb-4">
+      {% for j in [0, 1] %}
+        {% set chart = non_table_charts[i + j] if i + j < non_table_charts|length else None %}
+        {% if chart %}
+          <div class="bg-white p-4 rounded-xl shadow w-1/2 flex flex-col justify-between" style="height: 320px;">
+            <h2 class="font-bold text-sm mb-2">{{ chart.chart_title }}</h2>
+            <div class="flex-1 flex items-center justify-center">
+              <canvas id="chart_{{ i + j + 1 }}" style="max-height: 240px; max-width: 100%;"></canvas>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
   {% endfor %}
+</div>
+
+  <!-- Insights -->
+  <div class="card p-4 mb-4">
+    <h4 class="text-lg font-semibold mb-2">📊 Insights</h4>
+
+    <p class="text-xs text-gray-500 mb-2">
+      {% if insight_date == now().split(' ')[0] %}
+        Generated today
+      {% else %}
+        Showing insights from {{ insight_date }}
+      {% endif %}
+    </p>
+
+    <ul id="insights-list" class="list-disc pl-5 text-sm text-gray-700">
+      {% for note in notifications %}
+        {% if note.strip() %}
+          <li>{{ note }}</li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+
+    {% if not notifications %}
+      <p class="text-sm text-gray-500" id="no-insights-msg">No insights available yet.</p>
+    {% endif %}
+
+    <!-- 🔁 Regenerate Button (AJAX) -->
+    <button id="regenerate-insights-btn"
+            class="mt-4 px-4 py-2 bg-yellow-500 text-white text-sm font-medium rounded hover:bg-yellow-600">
+      🔁 Regenerate Insights
+    </button>
+
+    <!-- ✅ Success Toast -->
+    <div id="insight-toast"
+         class="mt-2 text-green-700 text-sm font-medium hidden">
+      ✅ Insights updated!
+    </div>
+  </div>
 
   <!-- Analyst Copilot Section -->
   <div class="bg-white p-4 rounded-lg shadow mb-6">
@@ -55,30 +114,34 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const rawData = document.getElementById("chart-data").textContent;
-  console.log("📦 Raw chart data string:", rawData); // 👈 Check if this looks like JSON
   const chartConfigs = JSON.parse(rawData);
-  console.log("✅ Parsed chartConfigs:", chartConfigs); // 👈 Should be an array
 
-  chartConfigs.forEach((cfg, index) => {
-    const ctx = document.getElementById(`chart_${index + 1}`).getContext("2d");
+chartConfigs
+  .filter(cfg => cfg.chart_type !== "table")  // ✨ Filter out tables
+  .forEach((cfg, index) => {
+    const ctx = document.getElementById(`chart_${index + 1}`)?.getContext("2d");
+    if (!ctx) return;
+
     new Chart(ctx, {
-      type: cfg.chart_type,
+      type: cfg.chart_type === 'histogram' ? 'bar' : cfg.chart_type,
       data: {
         labels: cfg.labels,
-        datasets: [{
-          label: cfg.metric_label || 'Value',
-          data: cfg.data,
-          backgroundColor: cfg.backgroundColor || 'rgba(54, 162, 235, 0.7)'
-        }]
+        datasets: [
+          {
+            label: cfg.metric_label || "Value",
+            data: cfg.data,
+            backgroundColor: cfg.backgroundColor || "rgba(54, 162, 235, 0.7)"
+          }
+        ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: cfg.chart_type !== 'bar' },
+          legend: { display: cfg.chart_type !== "bar" },
           tooltip: { enabled: true }
         },
-        scales: ['bar', 'line'].includes(cfg.chart_type) ? {
+        scales: ["bar", "line"].includes(cfg.chart_type) ? {
           y: {
             beginAtZero: true,
             ticks: { stepSize: 1 }
@@ -87,5 +150,6 @@
       }
     });
   });
+
 </script>
 {% endblock %}

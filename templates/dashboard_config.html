@@ -22,31 +22,37 @@
         <div>
           <label class="block text-sm font-medium mb-1">Chart Type</label>
           <select name="chart_type" class="w-full border p-2 rounded">
-            {% for t in ['bar', 'pie', 'line', 'doughnut'] %}
+            {% for t in ['bar', 'pie', 'line', 'doughnut', 'histogram'] %}
               <option value="{{ t }}" {% if config.chart_type == t %}selected{% endif %}>{{ t | capitalize }}</option>
             {% endfor %}
           </select>
         </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Metric</label>
-          <select name="metric" class="w-full border p-2 rounded">
-            {% for m in ['count', 'sum', 'avg', 'min', 'max', 'top'] %}
-              <option value="{{ m }}" {% if config.metric == m %}selected{% endif %}>{{ m | capitalize }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Group By</label>
-          <select name="group_by" class="w-full border p-2 rounded">
-            {% for col in columns %}
-              <option value="{{ col }}" {% if config.group_by == col %}selected{% endif %}>{{ col }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
+
+  <!-- Metric Field -->
+  <div>
+    <label class="block text-sm font-medium mb-1">Metric</label>
+    <select name="metric" class="w-full border p-2 rounded">
+      {% for m in ['count', 'sum', 'avg', 'min', 'max', 'top'] %}
+        <option value="{{ m }}" {% if config.metric == m %}selected{% endif %}>{{ m | capitalize }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <!-- Group By Field -->
+  <div>
+    <label class="block text-sm font-medium mb-1">Group By</label>
+    <select name="group_by" class="w-full border p-2 rounded">
+      {% for col in columns %}
+        <option value="{{ col }}" {% if config.group_by == col %}selected{% endif %}>{{ col }}</option>
+      {% endfor %}
+      <option value="tat_bucket" {% if config.group_by == 'tat_bucket' %}selected{% endif %}>tat_bucket</option>
+    </select>
+  </div>
+</div>
+
+
 
       <div class="mt-4">
-        <label class="block text-sm font-medium mb-1">Optional GPT Prompt</label>
+        <label class="block text-sm font-medium mb-1">GPT Prompt</label>
         <textarea name="prompt_text" rows="2" class="w-full border p-2 rounded">{{ config.prompt_text }}</textarea>
       </div>
 
@@ -74,6 +80,7 @@
             <option value="pie">Pie</option>
             <option value="line">Line</option>
             <option value="doughnut">Doughnut</option>
+            <option value="histogram">Histogram</option>
           </select>
         </div>
         <div>
@@ -93,12 +100,14 @@
             {% for col in columns %}
               <option value="{{ col }}">{{ col }}</option>
             {% endfor %}
+            <!-- Add derived field manually -->
+              <option value="tat_bucket" {% if config.group_by == 'tat_bucket' %}selected{% endif %}>tat_bucket</option>
           </select>
         </div>
       </div>
 
       <div class="mt-4">
-        <label class="block text-sm font-medium mb-1">Optional GPT Prompt</label>
+        <label class="block text-sm font-medium mb-1">GPT Prompt</label>
         <textarea name="prompt_text" rows="2" class="w-full border p-2 rounded"></textarea>
       </div>
 
@@ -127,7 +136,7 @@
     const clone = templateBlock.cloneNode(true);
     clone.style.display = "";
     clone.removeAttribute("id");
-    configContainer.appendChild(clone);
+    configContainer.insertBefore(clone, addBtn.parentNode);
   });
 
   // 🗑️ Remove chart block (and delete from DB if saved)
@@ -189,4 +198,5 @@
     }
   });
 </script>
+
 {% endblock %}

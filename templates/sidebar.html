@@ -1,4 +1,4 @@
-<!-- Tailwind CDN for demo (Remove if already imported in your project) -->
+   <!-- Tailwind CDN for demo (Remove if already imported in your project) -->
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
@@ -70,6 +70,7 @@
           </label>
         </div>
       </div>
+	  
 
       <!-- Section Menu Buttons -->
       <div>
@@ -79,7 +80,19 @@
         </div>
       </div>
     </form>
+	
+<!-- Add this after the AI Agent Selector section -->
+	<div class="mt-4 pt-4 border-t border-gray-200">
+	  <a href="{{ url_for('auth.logout') }}" 
+		 class="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
+		<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+		  <path fill-rule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clip-rule="evenodd" />
+		</svg>
+		Logout
+	  </a>
+	</div>	
   </div>
+
 
  <!-- Footer -->
   <div id="powered-by">Powered by CloudHub</div>

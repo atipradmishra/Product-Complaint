@@ -59,7 +59,8 @@
     <h2 class="text-2xl font-semibold text-blue-700 mb-2">Connection Setup</h2>
     <p class="text-sm text-gray-600 mb-4">Please provide connection details for the selected data source, along with the RAG Agent Name.</p>
 
-    <form id="connForm" class="space-y-4">
+	<form id="connForm" class="space-y-4" action="/save-connection" method="POST">
+
 	
 
       <!-- RAG Agent Name -->
@@ -126,7 +127,7 @@
 
       <!-- Submit -->
       <div class="pt-4 text-right">
-        <button type="button" onclick="submitConnForm()" class="bg-blue-600 text-white px-6 py-2 rounded-md shadow hover:bg-blue-700">Submit</button>
+		<button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md shadow hover:bg-blue-700">Submit</button>
         <button type="button" onclick="closeModal()" class="bg-red-600 text-white px-6 py-2 rounded-md shadow hover:bg-red-700">Cancel</button>
       </div>
     </form>

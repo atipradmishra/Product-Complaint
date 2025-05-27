@@ -4,6 +4,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from gpt_client import llm
 from decimal import Decimal
+from chatagent.utils import extract_country_from_question, generate_bar_chart
+from sql_query_executor import run_sql
 
 
 def clean_result_data(result):
@@ -45,83 +47,17 @@ def qualify_table_names(sql: str, conn_details: dict) -> str:
 
     return sql
 
-def generate_rag_response_BKP(result: dict, user_question: str) -> str:
-    try:
-        result = clean_result_data(result)
-
-        summary_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a pharma product complain analyst who explains structured JSON data in a friendly and natural tone. Your job is to analyze user queries and provide your response in a concrete and concise manner. Answer the user's question precisely using only the data provided."),
-            ("user", "User asked: {question}\n\nHere is the structured data returned:\n{json_data}\n\nWrite a natural language summary of this.")
-        ])
-
-        chain = summary_prompt | llm | StrOutputParser()
-
-        response = chain.invoke({
-            "question": user_question,
-            "json_data": json.dumps(result, indent=2)
-        })
-
-        return response
-
-    except Exception as e:
-        logging.error(f"Error generating human-readable summary: {e}")
-        return f"⚠️ Error generating summary."
-
-def generate_rag_response_BKP2(data: dict, user_question: str) -> str:
-    try:
-        charts = data.get("charts", [])
-        prompt = data.get("prompt", "")
-
-        if not charts or not prompt:
-            return "⚠️ Missing charts or prompt data for summary generation."
-
-        summary_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a pharma product complaint analyst. Analyze the following dashboard charts and generate a clear, leadership-ready summary that includes trends, patterns, outliers, and business insights."),
-            ("user", "{prompt}\n\nHere is the structured chart data:\n{json_data}\n\nSummarize this dashboard.")
-        ])
-
-        chain = summary_prompt | llm | StrOutputParser()
-
-        response = chain.invoke({
-            "prompt": prompt,
-            "json_data": json.dumps(charts, indent=2)
-        })
-
-        return response
-
-    except Exception as e:
-        logging.error(f"Error generating human-readable summary: {e}")
-        return "⚠️ Error generating summary."
-
-def generate_rag_response_BKP23(result: dict, user_question: str) -> str:
-    try:
-        result = clean_result_data(result)
-
-        summary_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a pharma product complaint analyst who explains structured JSON data in a friendly and natural tone. Your job is to analyze user queries and provide your response in a concrete and concise manner. Answer the user's question precisely using only the data provided."),
-            ("user", "User asked: {question}\n\nHere is the structured data returned:\n{json_data}\n\nWrite a natural language summary of this.")
-        ])
-
-        chain = summary_prompt | llm | StrOutputParser()
-
-        response = chain.invoke({
-            "question": user_question,
-            "json_data": json.dumps(result, indent=2)
-        })
-
-        return response
-
-    except Exception as e:
-        logging.error(f"Error generating human-readable summary: {e}")
-        return f"⚠ Error generating summary."
-        
-
 def generate_rag_response(result_or_payload: dict, user_question: str = None) -> str:
+    print("I'm inside generate rag response👀")
     try:
         # Dashboard charts summary path
         if "charts" in result_or_payload and "prompt" in result_or_payload:
             charts = result_or_payload.get("charts", [])
             prompt = result_or_payload.get("prompt", "")
+
+              # 🔍 Debug prints
+            print("📊 Summary Prompt:", prompt)
+            print("📦 Chart JSON:", json.dumps(charts, indent=2)[:500])  # limit output to preview
 
             summary_prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are a pharma product complaint analyst. Analyze the following dashboard charts and generate a clear, leadership-ready summary that includes trends, patterns, outliers, and business insights."),
@@ -133,6 +69,7 @@ def generate_rag_response(result_or_payload: dict, user_question: str = None) ->
                 "prompt": prompt,
                 "json_data": json.dumps(charts, indent=2)
             })
+            print("✅✅✅1", summary_prompt)
             return response
 
         # Raw SQL result path
@@ -150,12 +87,47 @@ def generate_rag_response(result_or_payload: dict, user_question: str = None) ->
                 "question": user_question,
                 "json_data": json.dumps(result, indent=2)
             })
-
+            print("✅✅✅2", summary_prompt)
             return response
 
         else:
             return "⚠️ Insufficient data provided for summary."
 
+        
     except Exception as e:
         logging.error(f"Error generating summary: {e}")
+        print("❌ GPT Summary Generation Exception:", e)
         return "⚠️ Error generating summary."
+
+
+def generate_why_response(user_question: str) -> dict:
+    focus_country = extract_country_from_question(user_question)
+
+    base_sql = """
+    SELECT origin_site_name, COUNT(*) as total_complaints
+    FROM raw_data
+    GROUP BY origin_site_name
+    """
+    base_data = run_sql(base_sql)
+
+    drill_sql = f"""
+    SELECT lifecycle_state, quality_event_type, title, COUNT(*) as count
+    FROM raw_data
+    WHERE origin_site_name = '{focus_country}'
+    GROUP BY lifecycle_state, quality_event_type, title
+    ORDER BY count DESC
+    """
+    drill_data = run_sql(drill_sql)
+
+    response_text = generate_rag_response({
+        "base_data": base_data,
+        "focus_country": focus_country,
+        "drill_data": drill_data,
+    }, user_question)
+
+    chart_html = generate_bar_chart(base_data, x="origin_site_name", y="total_complaints")
+
+    return {
+        "text": response_text,
+        "chart_html": chart_html
+    }
