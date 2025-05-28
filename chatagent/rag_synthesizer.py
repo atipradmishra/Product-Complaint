@@ -48,16 +48,16 @@ def qualify_table_names(sql: str, conn_details: dict) -> str:
     return sql
 
 def generate_rag_response(result_or_payload: dict, user_question: str = None) -> str:
-    print("I'm inside generate rag response👀")
+    print("🧠 Inside generate_rag_response")
+
     try:
-        # Dashboard charts summary path
+        # ✅ DASHBOARD MODE: AI Summary from Chart JSON
         if "charts" in result_or_payload and "prompt" in result_or_payload:
             charts = result_or_payload.get("charts", [])
             prompt = result_or_payload.get("prompt", "")
 
-              # 🔍 Debug prints
             print("📊 Summary Prompt:", prompt)
-            print("📦 Chart JSON:", json.dumps(charts, indent=2)[:500])  # limit output to preview
+            print("📦 Chart JSON Preview:", json.dumps(charts, indent=2)[:500])
 
             summary_prompt = ChatPromptTemplate.from_messages([
                 ("system", "You are a pharma product complaint analyst. Analyze the following dashboard charts and generate a clear, leadership-ready summary that includes trends, patterns, outliers, and business insights."),
@@ -69,11 +69,15 @@ def generate_rag_response(result_or_payload: dict, user_question: str = None) ->
                 "prompt": prompt,
                 "json_data": json.dumps(charts, indent=2)
             })
-            print("✅✅✅1", summary_prompt)
             return response
 
-        # Raw SQL result path
+        # ✅ CHAT MODE: Raw SQL result
         elif user_question:
+            # ⛔ Guard against missing or malformed result
+            if not result_or_payload or "columns" not in result_or_payload or "rows" not in result_or_payload:
+                print("⚠️ Incomplete or missing SQL result structure")
+                return "⚠️ No data available to answer this question."
+
             result = clean_result_data(result_or_payload)
 
             summary_prompt = ChatPromptTemplate.from_messages([
@@ -82,23 +86,19 @@ def generate_rag_response(result_or_payload: dict, user_question: str = None) ->
             ])
 
             chain = summary_prompt | llm | StrOutputParser()
-
             response = chain.invoke({
                 "question": user_question,
                 "json_data": json.dumps(result, indent=2)
             })
-            print("✅✅✅2", summary_prompt)
             return response
 
         else:
-            return "⚠️ Insufficient data provided for summary."
+            return "⚠️ No valid data provided for response generation."
 
-        
     except Exception as e:
         logging.error(f"Error generating summary: {e}")
         print("❌ GPT Summary Generation Exception:", e)
         return "⚠️ Error generating summary."
-
 
 def generate_why_response(user_question: str) -> dict:
     focus_country = extract_country_from_question(user_question)

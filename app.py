@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify, request, flash, redirect, session, url_for
 from dashboard.dashboard_metrics import get_kpi_cards
-from gpt_client import create_invoke_chain, llm
+from gpt_client import create_invoke_chain, llm, suggest_follow_up_questions
 from chatagent.sql_copilot import get_sql_from_question
 from chatagent.rag_synthesizer import generate_rag_response, generate_why_response
 from sql_query_executor import run_sql_with_connection, run_sql
@@ -42,12 +42,6 @@ def require_login():
     if "username" not in session:
         return redirect(url_for("auth.login"))
     
-# @app.route("/")
-# def home():
-#     if 'username' in session:
-#         return redirect(url_for('loginlanding'))  # Logged-in users → dashboard
-#     return render_template("loginlanding.html")  # Others → show landing page
-
 @app.route("/")
 def home():
     return render_template("welcome.html")  # Always show welcome page
@@ -57,7 +51,6 @@ def loginlanding():
     if 'username' not in session:
         return redirect(url_for('auth.login'))
     return render_template("loginlanding.html")
-
 
 @app.route("/dashboard")
 def dashboard():
@@ -481,10 +474,19 @@ def copilot_query():
 
             print(f"📄 Generated SQL:\n{sql}")
             print(f"📊 Query Result Rows:\n{result['rows']}")
+            followups = []
             rag_response = generate_rag_response(result, user_query)
-            log_chat_interaction(user_query, sql, result, rag_response)
-
+            
+            try:
+                followups = suggest_follow_up_questions(user_query, rag_response)
+            except Exception as e:
+                print("⚠️ Failed to generate follow-ups:", e)
+                
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            log_chat_interaction(user_query, sql, result, rag_response)
+            save_query_log_to_db(timestamp, user_query, sql, rag_response)
+
+            
             with open("sqlquery_log.txt", "a", encoding="utf-8") as log_file:
                 log_file.write(f"{timestamp} | USER QUERY: {user_query} | SQL: {sql} | RESULT: {rag_response}\n")
 
@@ -497,7 +499,7 @@ def copilot_query():
         print(f"❌ Error: {e}")
         rag_response = "Sorry, something went wrong while processing your request."
 
-    return jsonify({"response": rag_response})
+    return jsonify({"response": rag_response, "followups": followups})
 
 
 
@@ -954,4 +956,4 @@ def delete_connection(agent_id):
         return jsonify({"status": "error", "message": str(e)})
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5001)
