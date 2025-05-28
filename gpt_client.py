@@ -6,7 +6,6 @@ from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
-# Load environment variable (replace with your actual secret or .env handler)
 os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
 
 llm = ChatOpenAI(
@@ -48,3 +47,20 @@ def create_text_chain(structure: str, context: str, **kwargs):
 def test_call():
     # Simple test with plain text
     return create_text_chain("Tell me about {context}", context="Paris")
+
+def suggest_follow_up_questions(user_question, rag_response):
+    prompt = f"""
+        The user asked: "{user_question}"
+        The assistant replied: "{rag_response}"
+
+        Now suggest 3 concise follow-up questions the user might ask next. Avoid repeating the same question.
+        Just return the questions as a plain list.
+        """
+    try:
+        response = llm.invoke(prompt)
+        raw_output = response.content.strip().split("\n")
+        return [q.lstrip("-•0123456789. ").strip() for q in raw_output if q.strip()]
+    except Exception as e:
+        logging.error(f"Failed to generate follow-ups: {e}")
+        return []
+
