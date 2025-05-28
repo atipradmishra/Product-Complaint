@@ -1,0 +1,56 @@
+{% extends 'base.html' %} 
+{% block title %}ABIS Landing Page{% endblock %}
+
+{% block content %}
+<!-- Top-right Home button -->
+<div class="flex justify-end items-center p-4">
+  <a href="/loginlanding" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+    Home
+  </a>
+</div>
+
+<div class="ml-64 p-6">
+  <h1 class="text-3xl font-bold mb-6">Welcome to ABIS - Product Complaint</h1>
+  <p class="text-gray-600 mb-8">Start by selecting a category to get started.</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
+
+    <!-- Data Management -->
+    <div class="bg-white rounded-lg shadow hover:shadow-lg transition p-5 group">
+      <h2 class="text-xl font-semibold mb-4 text-blue-700 group-hover:underline">📁 Data Management</h2>
+      <ul class="space-y-2 text-sm text-gray-700">
+        <li><a href="/data-management" class="hover:text-blue-600">→ Data Source Onboarding</a></li>
+        <li><span class="text-gray-400">→ Data Quality **</span></li>
+        <li><span class="text-gray-400">→ Data Pipeline **</span></li>
+      </ul>
+    </div>
+
+    <!-- RAG Setup -->
+    <div class="bg-white rounded-lg shadow hover:shadow-lg transition p-5 group">
+      <h2 class="text-xl font-semibold mb-4 text-purple-700 group-hover:underline">🧠 RAG Setup</h2>
+      <ul class="space-y-2 text-sm text-gray-700">
+        <li><a href="/rag-configure" class="hover:text-purple-600">→ Configure RAG Agent</a></li>
+        <li><a href="/query-analyzer" class="hover:text-purple-600">→ Prompt Setup</a></li>
+        <li><a href="/data-dash-config" class="hover:text-purple-600">→ Configure Dashboard</a></li>
+      </ul>
+    </div>
+
+    <!-- Application -->
+    <div class="bg-white rounded-lg shadow hover:shadow-lg transition p-5 group">
+      <h2 class="text-xl font-semibold mb-4 text-green-700 group-hover:underline">🚀 Application</h2>
+      <ul class="space-y-2 text-sm text-gray-700">
+        <li><a href="/dashboard" class="hover:text-green-600">→ Dashboard</a></li>
+        <li><a href="/chat-with-rag" class="hover:text-green-600">→ Query Copilot</a></li>
+        <li><a href="/query-log-analyzer" class="hover:text-green-600">→ Analyzer Logs</a></li>
+        <li><span class="text-gray-400">→ Feedback Loop **</span></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- Footnote -->
+  <div class="mt-8 text-sm text-gray-500 italic">
+    ** - Available in Thinklee Paid version
+  </div>
+</div>
+{% endblock %}

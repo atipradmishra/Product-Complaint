@@ -39,9 +39,9 @@
     </style>
 </head>
 <body class="bg-gray-100">
-  {% if session.get('username') %}
-    {% include 'sidebar.html' %}
-  {% endif %}
+  {% if request.endpoint not in ['home', 'auth.login', 'auth.register', 'loginlanding'] and session.get('username') %}
+  {% include 'sidebar.html' %}
+{% endif %}
   {% block content %}{% endblock %}
 </body>
 </html>

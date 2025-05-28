@@ -42,12 +42,22 @@ def require_login():
     if "username" not in session:
         return redirect(url_for("auth.login"))
     
+# @app.route("/")
+# def home():
+#     if 'username' in session:
+#         return redirect(url_for('loginlanding'))  # Logged-in users → dashboard
+#     return render_template("loginlanding.html")  # Others → show landing page
+
 @app.route("/")
 def home():
-    # Redirect logged-in users to dashboard, others to login
-    if 'username' in session:
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('auth.login'))  # <-- Fix redirect target
+    return render_template("welcome.html")  # Always show welcome page
+
+@app.route("/loginlanding")
+def loginlanding():
+    if 'username' not in session:
+        return redirect(url_for('auth.login'))
+    return render_template("loginlanding.html")
+
 
 @app.route("/dashboard")
 def dashboard():

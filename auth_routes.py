@@ -18,7 +18,7 @@ def login():
         conn.close()
         if result and bcrypt.checkpw(password.encode('utf-8'), result[0]):
             session['username'] = username
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('loginlanding'))
         flash('Invalid credentials', 'danger')
     return render_template('login.html')
 
